@@ -256,36 +256,92 @@
     <div class="admin-header">
         <h1>🔧 PANEL ADMINISTRADOR</h1>
         <div class="header-buttons">
+            <button class="btn-header" onclick="showSection('products')">📦 PRODUCTOS</button>
+            <button class="btn-header" onclick="showSection('settings')">⚙️ CONFIGURACIÓN</button>
+            <button class="btn-header" onclick="showSection('orders')">📋 ÓRDENES</button>
             <button class="btn-header" onclick="viewStore()">👁️ VER TIENDA</button>
             <button class="btn-header btn-logout" onclick="logout()">🚪 CERRAR SESIÓN</button>
         </div>
     </div>
 
-    <div class="add-product-section">
-        <h2>➕ AGREGAR NUEVO PRODUCTO</h2>
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="product-name">Nombre del producto:</label>
-                <input type="text" id="product-name" placeholder="Ej: Nike Air Jordan 1">
-            </div>
-            <div class="form-group">
-                <label for="product-price">Precio:</label>
-                <input type="text" id="product-price" placeholder="Ej: 450.000">
-            </div>
-            <div class="form-group">
-                <label for="product-image">📷 Foto del producto:</label>
-                <input type="file" id="product-image" accept="image/*" capture="environment" onchange="previewImage(event)">
-                <div id="image-preview" style="margin-top: 10px; max-width: 200px; display: none;">
-                    <img id="preview-img" style="width: 100%; border-radius: 10px;">
+    <!-- SECCIÓN PRODUCTOS -->
+    <div id="section-products">
+        <div class="add-product-section">
+            <h2>➕ AGREGAR NUEVO PRODUCTO</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="product-name">Nombre del producto:</label>
+                    <input type="text" id="product-name" placeholder="Ej: Nike Air Jordan 1">
+                </div>
+                <div class="form-group">
+                    <label for="product-price">Precio:</label>
+                    <input type="text" id="product-price" placeholder="Ej: 450.000">
+                </div>
+                <div class="form-group">
+                    <label for="product-image">📷 Foto del producto:</label>
+                    <input type="file" id="product-image" accept="image/*" capture="environment" onchange="previewImage(event)">
+                    <div id="image-preview" style="margin-top: 10px; max-width: 200px; display: none;">
+                        <img id="preview-img" style="width: 100%; border-radius: 10px;">
+                    </div>
                 </div>
             </div>
+            <button class="btn-add" onclick="addProduct()">GUARDAR PRODUCTO</button>
         </div>
-        <button class="btn-add" onclick="addProduct()">GUARDAR PRODUCTO</button>
+
+        <div class="products-section">
+            <h2>📦 PRODUCTOS EN CATÁLOGO (<span id="product-count">0</span>)</h2>
+            <div class="products-grid" id="products-grid"></div>
+        </div>
     </div>
 
-    <div class="products-section">
-        <h2>📦 PRODUCTOS EN CATÁLOGO (<span id="product-count">0</span>)</h2>
-        <div class="products-grid" id="products-grid"></div>
+    <!-- SECCIÓN CONFIGURACIÓN -->
+    <div id="section-settings" style="display: none;">
+        <div class="add-product-section">
+            <h2>⚙️ CONFIGURACIÓN DEL SITIO</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="setting-phone">📞 Teléfono:</label>
+                    <input type="text" id="setting-phone" placeholder="573100000000">
+                </div>
+                <div class="form-group">
+                    <label for="setting-whatsapp">💬 WhatsApp:</label>
+                    <input type="text" id="setting-whatsapp" placeholder="573100000000">
+                </div>
+                <div class="form-group">
+                    <label for="setting-instagram">📸 Instagram:</label>
+                    <input type="text" id="setting-instagram" placeholder="@nancy_sneakers">
+                </div>
+                <div class="form-group">
+                    <label for="setting-facebook">📘 Facebook:</label>
+                    <input type="text" id="setting-facebook" placeholder="Nancy Sneakers">
+                </div>
+                <div class="form-group">
+                    <label for="setting-email">📧 Email:</label>
+                    <input type="text" id="setting-email" placeholder="ventas@nancysneakers.com">
+                </div>
+                <div class="form-group">
+                    <label for="setting-address">📍 Dirección:</label>
+                    <input type="text" id="setting-address" placeholder="Calle Principal #123, Colombia">
+                </div>
+                <div class="form-group">
+                    <label for="setting-welcome">👋 Texto de bienvenida:</label>
+                    <input type="text" id="setting-welcome" placeholder="Bienvenidos a Nancy Sneakers">
+                </div>
+                <div class="form-group">
+                    <label for="setting-shipping">🚚 Costo base de envío:</label>
+                    <input type="text" id="setting-shipping" placeholder="15000">
+                </div>
+            </div>
+            <button class="btn-add" onclick="saveSettings()">GUARDAR CONFIGURACIÓN</button>
+        </div>
+    </div>
+
+    <!-- SECCIÓN ÓRDENES -->
+    <div id="section-orders" style="display: none;">
+        <div class="products-section">
+            <h2>📋 ÓRDENES DE CLIENTES</h2>
+            <div id="orders-grid"></div>
+        </div>
     </div>
 
     <script>
@@ -491,6 +547,120 @@
 
             // Retornar la URL pública de la imagen
             return `${SUPABASE_URL}/storage/v1/object/public/${filePath}`;
+        }
+
+        function showSection(section) {
+            document.getElementById('section-products').style.display = section === 'products' ? 'block' : 'none';
+            document.getElementById('section-settings').style.display = section === 'settings' ? 'block' : 'none';
+            document.getElementById('section-orders').style.display = section === 'orders' ? 'block' : 'none';
+            
+            if (section === 'settings') loadSettings();
+            if (section === 'orders') loadOrders();
+        }
+
+        async function loadSettings() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/settings`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                const settings = await response.json();
+                
+                settings.forEach(setting => {
+                    const input = document.getElementById(`setting-${setting.key}`);
+                    if (input) input.value = setting.value;
+                });
+            } catch (error) {
+                console.error('Error al cargar configuración:', error);
+            }
+        }
+
+        async function saveSettings() {
+            const settings = [
+                { key: 'phone', value: document.getElementById('setting-phone').value },
+                { key: 'whatsapp', value: document.getElementById('setting-whatsapp').value },
+                { key: 'instagram', value: document.getElementById('setting-instagram').value },
+                { key: 'facebook', value: document.getElementById('setting-facebook').value },
+                { key: 'email', value: document.getElementById('setting-email').value },
+                { key: 'address', value: document.getElementById('setting-address').value },
+                { key: 'welcome_text', value: document.getElementById('setting-welcome').value },
+                { key: 'shipping_base', value: document.getElementById('setting-shipping').value }
+            ];
+
+            try {
+                for (const setting of settings) {
+                    await fetch(`${SUPABASE_URL}/rest/v1/settings?key=eq.${setting.key}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ value: setting.value })
+                    });
+                }
+                alert('✅ Configuración guardada exitosamente');
+            } catch (error) {
+                alert('❌ Error al guardar configuración: ' + error.message);
+            }
+        }
+
+        async function loadOrders() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/orders?order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                const orders = await response.json();
+                
+                const grid = document.getElementById('orders-grid');
+                if (orders.length === 0) {
+                    grid.innerHTML = '<div class="empty-message">No hay órdenes aún.</div>';
+                    return;
+                }
+
+                grid.innerHTML = orders.map(order => `
+                    <div class="product-card" style="padding: 20px;">
+                        <div class="product-name">Orden #${order.id}</div>
+                        <div style="margin: 10px 0; color: #888;">${new Date(order.created_at).toLocaleString()}</div>
+                        <div style="margin: 5px 0;"><strong>Cliente:</strong> ${order.customer_name}</div>
+                        <div style="margin: 5px 0;"><strong>Teléfono:</strong> ${order.customer_phone}</div>
+                        <div style="margin: 5px 0;"><strong>Dirección:</strong> ${order.customer_address}, ${order.customer_city}</div>
+                        <div style="margin: 5px 0;"><strong>Envío:</strong> ${order.shipping_company} - $${order.shipping_cost}</div>
+                        <div style="margin: 5px 0;"><strong>Total:</strong> $${order.total}</div>
+                        <div style="margin: 5px 0;"><strong>Estado:</strong> ${order.status}</div>
+                        <div style="margin: 5px 0;"><strong>Pago:</strong> ${order.payment_status}</div>
+                        <div class="product-actions" style="margin-top: 15px;">
+                            <button class="btn-edit" onclick="updateOrderStatus(${order.id}, 'completed')">✅ Completar</button>
+                            <button class="btn-delete" onclick="updateOrderStatus(${order.id}, 'cancelled')">❌ Cancelar</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error al cargar órdenes:', error);
+            }
+        }
+
+        async function updateOrderStatus(orderId, status) {
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                });
+                loadOrders();
+                alert('✅ Estado de la orden actualizado');
+            } catch (error) {
+                alert('❌ Error al actualizar orden: ' + error.message);
+            }
         }
 
         // Renderizar productos al cargar

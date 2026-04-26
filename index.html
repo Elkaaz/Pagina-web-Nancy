@@ -619,21 +619,125 @@
             display: block;
         }
 
-        /* ADMIN LINK */
-        .admin-link {
+        /* CHECKOUT MODAL */
+        .checkout-modal {
             position: fixed;
-            bottom: 10px;
-            left: 10px;
-            color: #ccc;
-            text-decoration: none;
-            font-size: 0.7rem;
-            opacity: 0.3;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .checkout-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .checkout-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .checkout-header h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .checkout-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .checkout-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .checkout-form input,
+        .checkout-form select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .checkout-form input:focus,
+        .checkout-form select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .order-summary {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+        }
+
+        .order-summary h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .summary-row.total {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--primary);
+            border-top: 2px solid #e0e0e0;
+            padding-top: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-checkout {
+            width: 100%;
+            padding: 18px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
             transition: 0.3s;
         }
 
-        .admin-link:hover {
-            opacity: 1;
-            color: var(--primary);
+        .btn-checkout:hover {
+            background: var(--primary-dark);
+            transform: scale(1.02);
         }
 
         /* RESPONSIVE */
@@ -814,6 +918,82 @@
 
     <a href="login.html" class="admin-link">Admin</a>
 
+    <!-- MODAL DE CHECKOUT -->
+    <div class="checkout-modal" id="checkout-modal" style="display: none;">
+        <div class="checkout-content">
+            <div class="checkout-header">
+                <h2>🛒 Finalizar Compra</h2>
+                <button class="close-btn" onclick="closeCheckout()">✕</button>
+            </div>
+            
+            <div class="checkout-form">
+                <div class="form-group">
+                    <label>👤 Nombre completo:</label>
+                    <input type="text" id="customer-name" placeholder="Tu nombre">
+                </div>
+                <div class="form-group">
+                    <label>📞 Teléfono:</label>
+                    <input type="text" id="customer-phone" placeholder="Tu teléfono">
+                </div>
+                <div class="form-group">
+                    <label>📍 Dirección:</label>
+                    <input type="text" id="customer-address" placeholder="Tu dirección">
+                </div>
+                <div class="form-group">
+                    <label>🏙️ Ciudad/Municipio:</label>
+                    <select id="customer-city" onchange="calculateShipping()">
+                        <option value="">Selecciona tu ciudad</option>
+                        <option value="bogota">Bogotá</option>
+                        <option value="medellin">Medellín</option>
+                        <option value="cali">Cali</option>
+                        <option value="barranquilla">Barranquilla</option>
+                        <option value="bucaramanga">Bucaramanga</option>
+                        <option value="pereira">Pereira</option>
+                        <option value="manizales">Manizales</option>
+                        <option value="ibague">Ibagué</option>
+                        <option value="villavicencio">Villavicencio</option>
+                        <option value="otra">Otra ciudad</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>🚚 Empresa de envío:</label>
+                    <select id="shipping-company" onchange="calculateShipping()">
+                        <option value="envia">Envia</option>
+                        <option value="servientrega">Servientrega</option>
+                    </select>
+                </div>
+                
+                <div class="order-summary">
+                    <h3>📋 Resumen del Pedido</h3>
+                    <div id="checkout-items"></div>
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="checkout-subtotal">$0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Envío:</span>
+                        <span id="checkout-shipping">$0</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="checkout-total">$0</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>💳 Método de pago:</label>
+                    <select id="payment-method">
+                        <option value="whatsapp">WhatsApp (pagar al recibir)</option>
+                        <option value="nequi">Nequi</option>
+                        <option value="bancolombia">Bancolombia</option>
+                    </select>
+                </div>
+                
+                <button class="btn-checkout" onclick="placeOrder()">CONFIRMAR PEDIDO</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- CONFIGURACIÓN SUPABASE ---
         const SUPABASE_URL = 'https://upoggoaofzzxpjwvdoii.supabase.co';
@@ -821,6 +1001,31 @@
 
         let products = [];
         let cart = [];
+        let settings = {};
+
+        // Cargar configuración desde Supabase
+        async function loadSettings() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/settings`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                const settingsData = await response.json();
+                
+                settingsData.forEach(setting => {
+                    settings[setting.key] = setting.value;
+                });
+                
+                // Aplicar configuración al sitio
+                if (settings.whatsapp) {
+                    document.querySelector('.whatsapp-link').href = `https://wa.me/${settings.whatsapp}`;
+                }
+            } catch (error) {
+                console.error('Error al cargar configuración:', error);
+            }
+        }
 
         // Cargar productos desde Supabase
         async function loadProducts() {
@@ -924,33 +1129,147 @@
                 alert('❌ Tu carrito está vacío. Agrega productos antes de finalizar.');
                 return;
             }
-            
-            const nombre = prompt("👤 ¿Cuál es tu nombre completo?");
-            if (!nombre) return;
-            
-            const ciudad = prompt("📍 ¿Ciudad y dirección de entrega?");
-            if (!ciudad) return;
-            
-            let msg = `🌸 *NUEVO PEDIDO - Nancy's Sneakers* 🌸\n\n`;
-            msg += `👤 *Cliente:* ${nombre}\n`;
-            msg += `📍 *Destino:* ${ciudad}\n\n`;
-            msg += `👟 *PRODUCTOS:*\n`;
-            
-            cart.forEach(item => {
-                msg += `- ${item.name} | Talla: ${item.talla} | $${item.price}\n`;
-            });
+            openCheckout();
+        }
 
-            let sum = 0;
-            cart.forEach(item => {
-                sum += parseInt(item.price.replace(/\./g, ''));
-            });
-            msg += `\n💰 *TOTAL: $${sum.toLocaleString('es-CO')}*`;
+        function openCheckout() {
+            document.getElementById('checkout-modal').style.display = 'flex';
+            updateCheckoutSummary();
+        }
 
-            const phone = "573100000000"; // <--- CAMBIA ESTE NÚMERO POR EL TUYO
-            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`);
+        function closeCheckout() {
+            document.getElementById('checkout-modal').style.display = 'none';
+        }
+
+        function updateCheckoutSummary() {
+            const itemsDiv = document.getElementById('checkout-items');
+            itemsDiv.innerHTML = cart.map(item => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+                    <span>${item.name} (x${item.quantity || 1})</span>
+                    <span>$${item.price}</span>
+                </div>
+            `).join('');
+
+            const subtotal = cart.reduce((sum, item) => {
+                return sum + parseInt(item.price.replace(/\./g, '')) * (item.quantity || 1);
+            }, 0);
+
+            document.getElementById('checkout-subtotal').textContent = `$${subtotal.toLocaleString('es-CO')}`;
+            calculateShipping();
+        }
+
+        function calculateShipping() {
+            const city = document.getElementById('customer-city').value;
+            const company = document.getElementById('shipping-company').value;
+            const baseShipping = parseInt(settings.shipping_base) || 15000;
+
+            let shippingCost = baseShipping;
+
+            // Tarifas aproximadas por ciudad (puedes ajustar según tarifas reales)
+            const cityRates = {
+                'bogota': { envia: 18000, servientrega: 20000 },
+                'medellin': { envia: 16000, servientrega: 18000 },
+                'cali': { envia: 17000, servientrega: 19000 },
+                'barranquilla': { envia: 19000, servientrega: 21000 },
+                'bucaramanga': { envia: 15000, servientrega: 17000 },
+                'pereira': { envia: 14000, servientrega: 16000 },
+                'manizales': { envia: 14000, servientrega: 16000 },
+                'ibague': { envia: 13000, servientrega: 15000 },
+                'villavicencio': { envia: 16000, servientrega: 18000 },
+                'otra': { envia: 25000, servientrega: 28000 }
+            };
+
+            if (city && cityRates[city]) {
+                shippingCost = cityRates[city][company] || baseShipping;
+            }
+
+            document.getElementById('checkout-shipping').textContent = `$${shippingCost.toLocaleString('es-CO')}`;
+
+            const subtotal = cart.reduce((sum, item) => {
+                return sum + parseInt(item.price.replace(/\./g, '')) * (item.quantity || 1);
+            }, 0);
+
+            const total = subtotal + shippingCost;
+            document.getElementById('checkout-total').textContent = `$${total.toLocaleString('es-CO')}`;
+        }
+
+        async function placeOrder() {
+            const name = document.getElementById('customer-name').value.trim();
+            const phone = document.getElementById('customer-phone').value.trim();
+            const address = document.getElementById('customer-address').value.trim();
+            const city = document.getElementById('customer-city').value;
+            const shippingCompany = document.getElementById('shipping-company').value;
+            const paymentMethod = document.getElementById('payment-method').value;
+
+            if (!name || !phone || !address || !city) {
+                alert('⚠️ Por favor completa todos los campos obligatorios');
+                return;
+            }
+
+            if (cart.length === 0) {
+                alert('⚠️ El carrito está vacío');
+                return;
+            }
+
+            const subtotal = cart.reduce((sum, item) => {
+                return sum + parseInt(item.price.replace(/\./g, '')) * (item.quantity || 1);
+            }, 0);
+
+            const cityRates = {
+                'bogota': { envia: 18000, servientrega: 20000 },
+                'medellin': { envia: 16000, servientrega: 18000 },
+                'cali': { envia: 17000, servientrega: 19000 },
+                'barranquilla': { envia: 19000, servientrega: 21000 },
+                'bucaramanga': { envia: 15000, servientrega: 17000 },
+                'pereira': { envia: 14000, servientrega: 16000 },
+                'manizales': { envia: 14000, servientrega: 16000 },
+                'ibague': { envia: 13000, servientrega: 15000 },
+                'villavicencio': { envia: 16000, servientrega: 18000 },
+                'otra': { envia: 25000, servientrega: 28000 }
+            };
+
+            const shippingCost = cityRates[city][shippingCompany] || 15000;
+            const total = subtotal + shippingCost;
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_name: name,
+                        customer_phone: phone,
+                        customer_address: address,
+                        customer_city: city,
+                        products: JSON.stringify(cart),
+                        subtotal: subtotal.toString(),
+                        shipping_cost: shippingCost.toString(),
+                        total: total.toString(),
+                        shipping_company: shippingCompany,
+                        payment_method: paymentMethod,
+                        payment_status: 'pending',
+                        status: 'pending'
+                    })
+                });
+
+                if (response.ok) {
+                    alert('✅ Pedido realizado exitosamente. Te contactaremos pronto.');
+                    cart = [];
+                    updateCartUI();
+                    closeCheckout();
+                } else {
+                    alert('❌ Error al realizar el pedido');
+                }
+            } catch (error) {
+                alert('❌ Error de conexión: ' + error.message);
+            }
         }
 
         // Inicializar
+        loadSettings();
         loadProducts();
     </script>
 </body>
