@@ -757,6 +757,25 @@
             transform: scale(1.05);
         }
 
+        .btn-cancel {
+            width: 100%;
+            padding: 18px;
+            background: #666;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-cancel:hover {
+            background: #555;
+            transform: scale(1.02);
+        }
+
         /* RESPONSIVE */
         @media (max-width: 768px) {
             .navbar {
@@ -998,6 +1017,7 @@
                 </div>
                 
                 <button class="btn-checkout" onclick="placeOrder()">CONFIRMAR PEDIDO</button>
+                <button class="btn-cancel" onclick="closeCheckout()">CANCELAR</button>
             </div>
         </div>
     </div>
