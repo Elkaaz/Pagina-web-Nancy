@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNEAKER VAULT | Elite Shop</title>
+    
+    <meta property="og:title" content="Sneaker Vault - Catálogo Exclusivo">
+    <meta property="og:description" content="Zapatillas premium con envío directo.">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #050505;
+            --accent: #ff3e3e;
+            --white: #ffffff;
+            --gray: #111111;
+            --danger: #dc2626;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--white); font-family: 'Inter', sans-serif; overflow-x: hidden; }
+
+        /* HEADER ESTILO HIGH-END */
+        header {
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(rgba(0,0,0,0.7), var(--bg)), 
+                        url('https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&q=80&w=2070');
+            background-size: cover;
+            background-position: center;
+        }
+
+        header h1 { font-size: clamp(3rem, 12vw, 9rem); font-weight: 900; letter-spacing: -4px; line-height: 0.8; }
+
+        /* GRID DE PRODUCTOS */
+        #catalog-container { padding: 40px 5%; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        
+        #catalog {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--gray);
+            border: 1px solid #222;
+            transition: 0.4s ease;
+            position: relative;
+        }
+
+        .card:hover { border-color: var(--white); transform: translateY(-5px); }
+        
+        .card img {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+            background-color: #1a1a1a; /* Placeholder mientras carga */
+        }
+
+        .card-info { padding: 20px; }
+        .card-name { font-weight: 700; font-size: 1.1rem; text-transform: uppercase; }
+        .card-price { color: var(--accent); margin: 10px 0; font-weight: bold; }
+
+        .btn-main {
+            width: 100%;
+            padding: 15px;
+            background: var(--white);
+            color: black;
+            border: none;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-main:hover { background: var(--accent); color: white; }
+
+        /* CARRITO LATERAL */
+        #cart-drawer {
+            position: fixed;
+            top: 0; right: -100%;
+            width: 100%; max-width: 450px;
+            height: 100%;
+            background: #000;
+            z-index: 2000;
+            padding: 40px;
+            transition: 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+            border-left: 1px solid #333;
+        }
+
+        #cart-drawer.active { right: 0; }
+        .cart-item { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 10px; }
+
+        /* PANEL ADMIN OCULTO (Se activa con la tecla 'A') */
+        #admin-section {
+            display: none;
+            padding: 50px 5%;
+            background: #0a0a0a;
+            border-top: 1px solid var(--accent);
+        }
+
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        input { width: 100%; padding: 15px; margin-bottom: 15px; background: #1a1a1a; border: 1px solid #333; color: white; }
+
+        .btn-delete {
+            background: var(--danger);
+            color: white;
+            padding: 5px 10px;
+            font-size: 0.7rem;
+            margin-top: 10px;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* FLOATING ACTION */
+        .cart-trigger {
+            position: fixed;
+            bottom: 30px; right: 30px;
+            background: var(--white);
+            color: black;
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; z-index: 1500;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <p style="letter-spacing: 5px; margin-bottom: 10px;">COLLECCIÓN 2026</p>
+        <h1>SNEAKER<br>VAULT</h1>
+    </header>
+
+    <main id="catalog-container">
+        <div class="section-header">
+            <h2>NEW ARRIVALS</h2>
+            <small id="admin-hint" style="color: #444;">Presiona 'A' para admin</small>
+        </div>
+        <div id="catalog"></div>
+    </main>
+
+    <section id="admin-section">
+        <h2 style="margin-bottom: 20px;">PORTAL DE ADMINISTRACIÓN</h2>
+        <div class="admin-grid">
+            <div class="form">
+                <input type="text" id="new-name" placeholder="Nombre de la Zapatilla">
+                <input type="text" id="new-price" placeholder="Precio (Ej: 480.000)">
+                <input type="text" id="new-img" placeholder="URL de la imagen o ruta (img/foto.jpg)">
+                <button class="btn-main" onclick="saveProduct()">GUARDAR EN CATÁLOGO</button>
+            </div>
+            <div>
+                <p>Instrucciones: Al agregar un producto, este se guarda en el almacenamiento local de tu navegador. Si usas GitHub Pages, tus cambios persistirán en tu dispositivo.</p>
+            </div>
+        </div>
+    </section>
+
+    <div id="cart-drawer">
+        <h2 style="margin-bottom: 30px; letter-spacing: 2px;">MI SELECCIÓN</h2>
+        <div id="cart-list"></div>
+        <div id="cart-total" style="font-size: 1.5rem; font-weight: 900; margin: 30px 0; border-top: 2px solid white; padding-top: 20px;"></div>
+        
+        <button class="btn-main" style="background: #25d366; color: white;" onclick="sendOrder()">FINALIZAR POR WHATSAPP</button>
+        <button onclick="toggleCart()" style="background: none; color: white; border: none; margin-top: 30px; cursor: pointer; text-decoration: underline;">VOLVER A LA TIENDA</button>
+    </div>
+
+    <div class="cart-trigger" onclick="toggleCart()">
+        🛒 <span id="cart-count">0</span>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS LOCAL ---
+        let products = JSON.parse(localStorage.getItem('vault_db')) || [
+            { name: "Jordan 4 Retro Thunder", price: "950.000", img: "https://images.unsplash.com/photo-1597044753138-b7a26f6d3742" },
+            { name: "Nike Dunk Low Panda", price: "520.000", img: "https://images.unsplash.com/photo-1600054800747-be294a6a0d26" }
+        ];
+
+        let cart = [];
+        let isAdminVisible = false;
+
+        // --- RENDERIZADO ---
+        function render() {
+            const catalog = document.getElementById('catalog');
+            catalog.innerHTML = '';
+            
+            products.forEach((p, i) => {
+                catalog.innerHTML += `
+                    <div class="card">
+                        <img src="${p.img}" loading="lazy">
+                        <div class="card-info">
+                            <p class="card-name">${p.name}</p>
+                            <p class="card-price">$${p.price}</p>
+                            <button class="btn-main" onclick="addToCart(${i})">COMPRAR</button>
+                            ${isAdminVisible ? `<button class="btn-delete" onclick="deleteProduct(${i})">ELIMINAR</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            localStorage.setItem('vault_db', JSON.stringify(products));
+        }
+
+        // --- FUNCIONES DE PRODUCTO ---
+        function saveProduct() {
+            const n = document.getElementById('new-name').value;
+            const p = document.getElementById('new-price').value;
+            const i = document.getElementById('new-img').value;
+            if(n && p && i) {
+                products.push({name: n, price: p, img: i});
+                render();
+                alert("Zapatilla añadida!");
+            }
+        }
+
+        function deleteProduct(index) {
+            if(confirm("¿Seguro que quieres eliminar este producto?")) {
+                products.splice(index, 1);
+                render();
+            }
+        }
+
+        // --- CARRITO ---
+        function addToCart(index) {
+            const talla = prompt("Ingresa la talla para este par:");
+            if(talla) {
+                cart.push({...products[index], talla});
+                updateCartUI();
+                toggleCart();
+            }
+        }
+
+        function updateCartUI() {
+            const list = document.getElementById('cart-list');
+            const totalE = document.getElementById('cart-total');
+            document.getElementById('cart-count').innerText = cart.length;
+            
+            list.innerHTML = '';
+            let sum = 0;
+            cart.forEach((item, i) => {
+                list.innerHTML += `
+                    <div class="cart-item">
+                        <span>${item.name} (T: ${item.talla})</span>
+                        <span>$${item.price}</span>
+                    </div>
+                `;
+                sum += parseInt(item.price.replace(/\./g, ''));
+            });
+            totalE.innerText = "TOTAL: $" + sum.toLocaleString('es-CO');
+        }
+
+        function toggleCart() {
+            document.getElementById('cart-drawer').classList.toggle('active');
+        }
+
+        // --- WHATSAPP ---
+        function sendOrder() {
+            if(cart.length === 0) return;
+            
+            const nombre = prompt("¿Cuál es tu nombre completo?");
+            const ciudad = prompt("¿Ciudad y dirección de entrega?");
+            
+            let msg = `🔥 *NUEVO PEDIDO - SNEAKER VAULT* 🔥\n\n`;
+            msg += `👤 *Cliente:* ${nombre}\n`;
+            msg += `📍 *Destino:* ${ciudad}\n\n`;
+            msg += `👟 *PRODUCTOS:*\n`;
+            
+            cart.forEach(item => {
+                msg += `- ${item.name} | Talla: ${item.talla} ($${item.price})\n`;
+            });
+
+            const phone = "573100000000"; // <--- TU NÚMERO AQUÍ
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`);
+        }
+
+        // --- TRUCO TECLA 'A' PARA ADMIN ---
+        window.addEventListener('keydown', (e) => {
+            if(e.key.toLowerCase() === 'a') {
+                isAdminVisible = !isAdminVisible;
+                document.getElementById('admin-section').style.display = isAdminVisible ? 'block' : 'none';
+                render();
+                if(isAdminVisible) window.scrollTo(0, document.body.scrollHeight);
+            }
+        });
+
+        render();
+    </script>
+</body>
+</html>
