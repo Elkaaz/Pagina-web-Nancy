@@ -259,6 +259,7 @@
             <button class="btn-header" onclick="showSection('products')">📦 PRODUCTOS</button>
             <button class="btn-header" onclick="showSection('settings')">⚙️ CONFIGURACIÓN</button>
             <button class="btn-header" onclick="showSection('orders')">📋 ÓRDENES</button>
+            <button class="btn-header" onclick="showSection('returns')">🔄 DEVOLUCIONES</button>
             <button class="btn-header" onclick="viewStore()">👁️ VER TIENDA</button>
             <button class="btn-header btn-logout" onclick="logout()">🚪 CERRAR SESIÓN</button>
         </div>
@@ -341,6 +342,14 @@
         <div class="products-section">
             <h2>📋 ÓRDENES DE CLIENTES</h2>
             <div id="orders-grid"></div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN DEVOLUCIONES -->
+    <div id="section-returns" style="display: none;">
+        <div class="products-section">
+            <h2>🔄 SOLICITUDES DE CAMBIO/DEVOLUCIÓN</h2>
+            <div id="returns-grid"></div>
         </div>
     </div>
 
@@ -553,9 +562,11 @@
             document.getElementById('section-products').style.display = section === 'products' ? 'block' : 'none';
             document.getElementById('section-settings').style.display = section === 'settings' ? 'block' : 'none';
             document.getElementById('section-orders').style.display = section === 'orders' ? 'block' : 'none';
+            document.getElementById('section-returns').style.display = section === 'returns' ? 'block' : 'none';
             
             if (section === 'settings') loadSettings();
             if (section === 'orders') loadOrders();
+            if (section === 'returns') loadReturns();
         }
 
         async function loadSettings() {
@@ -679,6 +690,71 @@
                 alert('✅ Estado de la orden actualizado');
             } catch (error) {
                 alert('❌ Error al actualizar orden: ' + error.message);
+            }
+        }
+
+        async function loadReturns() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/returns?order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                const returns = await response.json();
+                
+                const grid = document.getElementById('returns-grid');
+                if (returns.length === 0) {
+                    grid.innerHTML = '<div class="empty-message">No hay solicitudes de cambio/devolución aún.</div>';
+                    return;
+                }
+
+                grid.innerHTML = returns.map(ret => `
+                    <div class="product-card" style="padding: 20px;">
+                        <div class="product-name">Solicitud #${ret.id}</div>
+                        <div style="margin: 10px 0; color: #888;">${new Date(ret.created_at).toLocaleString()}</div>
+                        <div style="margin: 5px 0;"><strong>Cliente:</strong> ${ret.customer_name}</div>
+                        <div style="margin: 5px 0;"><strong>Teléfono:</strong> ${ret.customer_phone}</div>
+                        <div style="margin: 5px 0;"><strong>Orden #:</strong> ${ret.order_id || 'N/A'}</div>
+                        <div style="margin: 15px 0;">
+                            <strong>👟 Producto:</strong>
+                            <div style="display: flex; align-items: center; margin-top: 10px;">
+                                <img src="${ret.product_image}" alt="${ret.product_name}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" onerror="this.src='https://via.placeholder.com/80x80?text=Sin+imagen'">
+                                <div>
+                                    <div style="font-weight: bold;">${ret.product_name}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin: 5px 0;"><strong>Tipo:</strong> ${ret.return_type === 'change' ? '🔄 Cambio' : '💰 Devolución'}</div>
+                        <div style="margin: 5px 0;"><strong>Motivo:</strong> ${ret.reason}</div>
+                        <div style="margin: 5px 0;"><strong>Estado:</strong> ${ret.status}</div>
+                        <div class="product-actions" style="margin-top: 15px;">
+                            <button class="btn-edit" onclick="updateReturnStatus(${ret.id}, 'approved')">✅ Aprobar</button>
+                            <button class="btn-edit" onclick="updateReturnStatus(${ret.id}, 'completed')">📦 Completado</button>
+                            <button class="btn-delete" onclick="updateReturnStatus(${ret.id}, 'rejected')">❌ Rechazar</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error al cargar devoluciones:', error);
+            }
+        }
+
+        async function updateReturnStatus(returnId, status) {
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/returns?id=eq.${returnId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                });
+                loadReturns();
+                alert('✅ Estado de la solicitud actualizado');
+            } catch (error) {
+                alert('❌ Error al actualizar solicitud: ' + error.message);
             }
         }
 

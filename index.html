@@ -740,6 +740,23 @@
             transform: scale(1.02);
         }
 
+        .btn-return {
+            padding: 12px 24px;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-return:hover {
+            background: #7b1fa2;
+            transform: scale(1.05);
+        }
+
         /* RESPONSIVE */
         @media (max-width: 768px) {
             .navbar {
@@ -870,30 +887,21 @@
             <div class="footer-section">
                 <h3>Nancy's Sneakers</h3>
                 <p>Tu destino para zapatillas premium. Calidad, estilo y comodidad en cada paso.</p>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                    <a href="#"><i class="fab fa-whatsapp"></i></a>
-                </div>
-            </div>
-            <div class="footer-section">
-                <h3>Enlaces Rápidos</h3>
-                <ul class="footer-links">
-                    <li><a href="#inicio">Inicio</a></li>
-                    <li><a href="#productos">Productos</a></li>
-                    <li><a href="#categorias">Categorías</a></li>
-                    <li><a href="#testimonios">Testimonios</a></li>
-                </ul>
             </div>
             <div class="footer-section">
                 <h3>Contacto</h3>
-                <p>📧 info@nancysneakers.com</p>
-                <p>📱 +57 300 000 0000</p>
-                <p>📍 Colombia</p>
+                <p>📞 +57 310 000 0000</p>
+                <p>📧 ventas@nancysneakers.com</p>
+            </div>
+            <div class="footer-section">
+                <h3>Síguenos</h3>
+                <a href="#">Instagram</a>
+                <a href="#">Facebook</a>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 Nancy's Sneakers. Todos los derechos reservados.</p>
+            <p>&copy; 2024 Nancy's Sneakers. Todos los derechos reservados.</p>
+            <button class="btn-return" onclick="openReturnModal()">🔄 Solicitar Cambio/Devolución</button>
         </div>
     </footer>
 
@@ -990,6 +998,55 @@
                 </div>
                 
                 <button class="btn-checkout" onclick="placeOrder()">CONFIRMAR PEDIDO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CAMBIO/DEVOLUCIÓN -->
+    <div class="checkout-modal" id="return-modal" style="display: none;">
+        <div class="checkout-content">
+            <div class="checkout-header">
+                <h2>🔄 Solicitar Cambio/Devolución</h2>
+                <button class="close-btn" onclick="closeReturnModal()">✕</button>
+            </div>
+            
+            <div class="checkout-form">
+                <div class="form-group">
+                    <label>👤 Nombre completo:</label>
+                    <input type="text" id="return-name" placeholder="Tu nombre">
+                </div>
+                <div class="form-group">
+                    <label>📞 Teléfono:</label>
+                    <input type="text" id="return-phone" placeholder="Tu teléfono">
+                </div>
+                <div class="form-group">
+                    <label>📦 Número de orden (si lo tienes):</label>
+                    <input type="text" id="return-order-id" placeholder="Ej: 123">
+                </div>
+                <div class="form-group">
+                    <label>👟 Producto:</label>
+                    <input type="text" id="return-product" placeholder="Nombre del producto">
+                </div>
+                <div class="form-group">
+                    <label>📷 Foto del producto:</label>
+                    <input type="file" id="return-image" accept="image/*" capture="environment" onchange="previewReturnImage(event)">
+                    <div id="return-image-preview" style="margin-top: 10px; max-width: 200px; display: none;">
+                        <img id="return-preview-img" style="width: 100%; border-radius: 10px;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>🔄 Tipo de solicitud:</label>
+                    <select id="return-type">
+                        <option value="change">Cambio de producto</option>
+                        <option value="refund">Devolución del dinero</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📝 Motivo:</label>
+                    <textarea id="return-reason" rows="4" placeholder="Explica por qué quieres el cambio/devolución..."></textarea>
+                </div>
+                
+                <button class="btn-checkout" onclick="submitReturn()">ENVIAR SOLICITUD</button>
             </div>
         </div>
     </div>
@@ -1265,6 +1322,111 @@
                 }
             } catch (error) {
                 alert('❌ Error de conexión: ' + error.message);
+            }
+        }
+
+        // --- FUNCIONES DE CAMBIO/DEVOLUCIÓN ---
+        function openReturnModal() {
+            document.getElementById('return-modal').style.display = 'flex';
+        }
+
+        function closeReturnModal() {
+            document.getElementById('return-modal').style.display = 'none';
+        }
+
+        function previewReturnImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('return-preview-img').src = e.target.result;
+                    document.getElementById('return-image-preview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function uploadReturnImageToSupabase(file) {
+            const fileName = `${Date.now()}_return_${file.name}`;
+            const filePath = `returns/${fileName}`;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${filePath}`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'multipart/form-data'
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al subir imagen');
+            }
+
+            return `${SUPABASE_URL}/storage/v1/object/public/${filePath}`;
+        }
+
+        async function submitReturn() {
+            const name = document.getElementById('return-name').value.trim();
+            const phone = document.getElementById('return-phone').value.trim();
+            const orderId = document.getElementById('return-order-id').value.trim();
+            const product = document.getElementById('return-product').value.trim();
+            const imageInput = document.getElementById('return-image');
+            const returnType = document.getElementById('return-type').value;
+            const reason = document.getElementById('return-reason').value.trim();
+
+            if (!name || !phone || !product || !reason) {
+                alert('⚠️ Por favor completa todos los campos obligatorios');
+                return;
+            }
+
+            if (!imageInput.files || imageInput.files.length === 0) {
+                alert('⚠️ Por favor toma o selecciona una foto del producto');
+                return;
+            }
+
+            try {
+                const imageUrl = await uploadReturnImageToSupabase(imageInput.files[0]);
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/returns`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId || null,
+                        customer_name: name,
+                        customer_phone: phone,
+                        product_name: product,
+                        product_image: imageUrl,
+                        reason: reason,
+                        return_type: returnType,
+                        status: 'pending'
+                    })
+                });
+
+                if (response.ok) {
+                    alert('✅ Solicitud de cambio/devolución enviada exitosamente. Te contactaremos pronto.');
+                    closeReturnModal();
+                    // Limpiar formulario
+                    document.getElementById('return-name').value = '';
+                    document.getElementById('return-phone').value = '';
+                    document.getElementById('return-order-id').value = '';
+                    document.getElementById('return-product').value = '';
+                    document.getElementById('return-image').value = '';
+                    document.getElementById('return-reason').value = '';
+                    document.getElementById('return-image-preview').style.display = 'none';
+                } else {
+                    alert('❌ Error al enviar solicitud');
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
             }
         }
 
