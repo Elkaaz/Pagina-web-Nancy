@@ -158,15 +158,29 @@
     </div>
 
     <script>
-        // Credenciales predefinidas
-        const ADMIN_USER = "Nancyzapata";
-        const ADMIN_PASS = "2973";
+        // Credenciales con hash para seguridad
+        const ADMIN_USER_HASH = "0000000000000000000000005a75164a"; // hash de "Nancyzapata"
+        const ADMIN_PASS_HASH = "00000000000000000000000000179763"; // hash de "2973"
+
+        // Función simple de hash
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash).toString(16).padStart(32, '0').substring(0, 32);
+        }
 
         function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
-            if (username === ADMIN_USER && password === ADMIN_PASS) {
+            const usernameHash = simpleHash(username);
+            const passwordHash = simpleHash(password);
+            
+            if (usernameHash === ADMIN_USER_HASH && passwordHash === ADMIN_PASS_HASH) {
                 localStorage.setItem('admin_logged_in', 'true');
                 window.location.href = 'admin.html';
             } else {
