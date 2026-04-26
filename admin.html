@@ -623,23 +623,42 @@
                     return;
                 }
 
-                grid.innerHTML = orders.map(order => `
-                    <div class="product-card" style="padding: 20px;">
-                        <div class="product-name">Orden #${order.id}</div>
-                        <div style="margin: 10px 0; color: #888;">${new Date(order.created_at).toLocaleString()}</div>
-                        <div style="margin: 5px 0;"><strong>Cliente:</strong> ${order.customer_name}</div>
-                        <div style="margin: 5px 0;"><strong>Teléfono:</strong> ${order.customer_phone}</div>
-                        <div style="margin: 5px 0;"><strong>Dirección:</strong> ${order.customer_address}, ${order.customer_city}</div>
-                        <div style="margin: 5px 0;"><strong>Envío:</strong> ${order.shipping_company} - $${order.shipping_cost}</div>
-                        <div style="margin: 5px 0;"><strong>Total:</strong> $${order.total}</div>
-                        <div style="margin: 5px 0;"><strong>Estado:</strong> ${order.status}</div>
-                        <div style="margin: 5px 0;"><strong>Pago:</strong> ${order.payment_status}</div>
-                        <div class="product-actions" style="margin-top: 15px;">
-                            <button class="btn-edit" onclick="updateOrderStatus(${order.id}, 'completed')">✅ Completar</button>
-                            <button class="btn-delete" onclick="updateOrderStatus(${order.id}, 'cancelled')">❌ Cancelar</button>
+                grid.innerHTML = orders.map(order => {
+                    const products = JSON.parse(order.products);
+                    const productsHtml = products.map(p => `
+                        <div style="display: flex; align-items: center; margin: 10px 0; padding: 10px; background: #1a1a1a; border-radius: 8px;">
+                            <img src="${p.img}" alt="${p.name}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px; margin-right: 10px;" onerror="this.src='https://via.placeholder.com/60x60?text=Sin+imagen'">
+                            <div>
+                                <div style="font-weight: bold;">${p.name}</div>
+                                <div style="color: #888;">$${p.price} x${p.quantity || 1}</div>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `).join('');
+
+                    return `
+                        <div class="product-card" style="padding: 20px;">
+                            <div class="product-name">Orden #${order.id}</div>
+                            <div style="margin: 10px 0; color: #888;">${new Date(order.created_at).toLocaleString()}</div>
+                            <div style="margin: 5px 0;"><strong>Cliente:</strong> ${order.customer_name}</div>
+                            <div style="margin: 5px 0;"><strong>Teléfono:</strong> ${order.customer_phone}</div>
+                            <div style="margin: 5px 0;"><strong>Dirección:</strong> ${order.customer_address}, ${order.customer_city}</div>
+                            <div style="margin: 15px 0;">
+                                <strong>📦 Productos:</strong>
+                                <div style="margin-top: 10px;">${productsHtml}</div>
+                            </div>
+                            <div style="margin: 5px 0;"><strong>Envío:</strong> ${order.shipping_company} - $${order.shipping_cost}</div>
+                            <div style="margin: 5px 0;"><strong>Subtotal:</strong> $${order.subtotal}</div>
+                            <div style="margin: 5px 0; font-size: 1.2rem; color: var(--accent);"><strong>Total:</strong> $${order.total}</div>
+                            <div style="margin: 5px 0;"><strong>Estado:</strong> ${order.status}</div>
+                            <div style="margin: 5px 0;"><strong>Pago:</strong> ${order.payment_status}</div>
+                            <div class="product-actions" style="margin-top: 15px;">
+                                <button class="btn-edit" onclick="updateOrderStatus(${order.id}, 'completed')">✅ Completar</button>
+                                <button class="btn-edit" onclick="updateOrderStatus(${order.id}, 'processing')">📦 En Proceso</button>
+                                <button class="btn-delete" onclick="updateOrderStatus(${order.id}, 'cancelled')">❌ Cancelar</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             } catch (error) {
                 console.error('Error al cargar órdenes:', error);
             }
