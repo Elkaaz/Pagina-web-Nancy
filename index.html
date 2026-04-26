@@ -776,6 +776,62 @@
             transform: scale(1.02);
         }
 
+        .menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.2);
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .mobile-menu.active {
+            display: block;
+        }
+
+        .close-menu {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-dark);
+        }
+
+        .mobile-nav-links {
+            list-style: none;
+            margin-top: 60px;
+        }
+
+        .mobile-nav-links li {
+            margin-bottom: 20px;
+        }
+
+        .mobile-nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-size: 1.2rem;
+            font-weight: 500;
+            display: block;
+            padding: 10px 0;
+        }
+
         /* RESPONSIVE */
         @media (max-width: 768px) {
             .navbar {
@@ -784,6 +840,10 @@
 
             .nav-links {
                 display: none;
+            }
+
+            .menu-btn {
+                display: block;
             }
 
             .hero-content {
@@ -811,19 +871,32 @@
     <nav class="navbar">
         <a href="#" class="logo">Nancy's Sneakers</a>
         <ul class="nav-links">
-            <li><a href="#inicio">Inicio</a></li>
-            <li><a href="#categorias">Categorías</a></li>
-            <li><a href="#productos">Productos</a></li>
-            <li><a href="#testimonios">Testimonios</a></li>
-            <li><a href="login.html" style="color: var(--primary);">🔐 Admin</a></li>
+            <li><a href="#home">Inicio</a></li>
+            <li><a href="#products">Productos</a></li>
+            <li><a href="#about">Nosotros</a></li>
+            <li><a href="#contact">Contacto</a></li>
         </ul>
         <div class="nav-icons">
-            <div class="cart-icon" onclick="toggleCart()">
+            <button class="icon-btn" onclick="toggleCart()">
                 <i class="fas fa-shopping-bag"></i>
                 <span class="cart-count" id="cart-count">0</span>
-            </div>
+            </button>
+            <button class="menu-btn" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
     </nav>
+
+    <!-- MENÚ MÓVIL -->
+    <div class="mobile-menu" id="mobile-menu">
+        <button class="close-menu" onclick="toggleMobileMenu()">✕</button>
+        <ul class="mobile-nav-links">
+            <li><a href="#home" onclick="toggleMobileMenu()">Inicio</a></li>
+            <li><a href="#products" onclick="toggleMobileMenu()">Productos</a></li>
+            <li><a href="#about" onclick="toggleMobileMenu()">Nosotros</a></li>
+            <li><a href="#contact" onclick="toggleMobileMenu()">Contacto</a></li>
+        </ul>
+    </div>
 
     <!-- HERO SECTION -->
     <section class="hero" id="inicio">
@@ -1207,6 +1280,11 @@
                 return;
             }
             openCheckout();
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('active');
         }
 
         function openCheckout() {
