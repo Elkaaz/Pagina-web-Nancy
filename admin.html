@@ -256,8 +256,6 @@
     <div class="admin-header">
         <h1>🔧 PANEL ADMINISTRADOR</h1>
         <div class="header-buttons">
-            <button class="btn-header" onclick="showTokenSetup()">⚙️ CONFIGURAR GITHUB</button>
-            <button class="btn-header" onclick="saveToGitHub()">� GUARDAR EN GITHUB</button>
             <button class="btn-header" onclick="viewStore()">👁️ VER TIENDA</button>
             <button class="btn-header btn-logout" onclick="logout()">🚪 CERRAR SESIÓN</button>
         </div>
@@ -288,17 +286,26 @@
     </div>
 
     <script>
+        // --- CONFIGURACIÓN SUPABASE ---
+        const SUPABASE_URL = 'https://upoggoaofzzxpjwvdoii.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_gS37Hx8qTy7jLR_S-YBd1A_-Frir6CZ';
+
         // Verificar autenticación
         if (localStorage.getItem('admin_logged_in') !== 'true') {
             window.location.href = 'login.html';
         }
 
-        // Cargar productos desde archivo JSON
+        // Cargar productos desde Supabase
         let products = [];
 
         async function loadProducts() {
             try {
-                const response = await fetch('productos.json');
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
                 products = await response.json();
                 renderProducts();
             } catch (error) {
@@ -320,7 +327,7 @@
             }
 
             grid.innerHTML = '';
-            products.forEach((product, index) => {
+            products.forEach((product) => {
                 grid.innerHTML += `
                     <div class="product-card">
                         <img src="${product.img}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/300x250?text=Sin+imagen'">
@@ -328,8 +335,8 @@
                             <div class="product-name">${product.name}</div>
                             <div class="product-price">$${product.price}</div>
                             <div class="product-actions">
-                                <button class="btn-edit" onclick="editProduct(${index})">✏️ EDITAR</button>
-                                <button class="btn-delete" onclick="deleteProduct(${index})">🗑️ ELIMINAR</button>
+                                <button class="btn-edit" onclick="editProduct(${product.id})">✏️ EDITAR</button>
+                                <button class="btn-delete" onclick="deleteProduct(${product.id})">🗑️ ELIMINAR</button>
                             </div>
                         </div>
                     </div>
@@ -337,7 +344,7 @@
             });
         }
 
-        function addProduct() {
+        async function addProduct() {
             const name = document.getElementById('product-name').value.trim();
             const price = document.getElementById('product-price').value.trim();
             const image = document.getElementById('product-image').value.trim();
@@ -347,35 +354,83 @@
                 return;
             }
 
-            products.push({ name, price, img: image });
-            
-            // Limpiar formulario
-            document.getElementById('product-name').value = '';
-            document.getElementById('product-price').value = '';
-            document.getElementById('product-image').value = '';
-            
-            renderProducts();
-            alert('✅ Producto agregado. Recuerda EXPORTAR DATOS y subir el archivo a GitHub para que los clientes vean los cambios.');
-        }
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, price, img: image })
+                });
 
-        function deleteProduct(index) {
-            if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
-                products.splice(index, 1);
-                renderProducts();
-                alert('✅ Producto eliminado. Recuerda EXPORTAR DATOS y subir el archivo a GitHub para que los clientes vean los cambios.');
+                if (response.ok) {
+                    // Limpiar formulario
+                    document.getElementById('product-name').value = '';
+                    document.getElementById('product-price').value = '';
+                    document.getElementById('product-image').value = '';
+                    
+                    await loadProducts();
+                    alert('✅ Producto agregado exitosamente. Los cambios son inmediatos para todos los clientes.');
+                } else {
+                    alert('❌ Error al agregar producto');
+                }
+            } catch (error) {
+                alert('❌ Error de conexión: ' + error.message);
             }
         }
 
-        function editProduct(index) {
-            const product = products[index];
+        async function deleteProduct(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+                try {
+                    const response = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        await loadProducts();
+                        alert('✅ Producto eliminado exitosamente. Los cambios son inmediatos para todos los clientes.');
+                    } else {
+                        alert('❌ Error al eliminar producto');
+                    }
+                } catch (error) {
+                    alert('❌ Error de conexión: ' + error.message);
+                }
+            }
+        }
+
+        async function editProduct(id) {
+            const product = products.find(p => p.id === id);
             const newName = prompt('Nombre del producto:', product.name);
             const newPrice = prompt('Precio:', product.price);
             const newImage = prompt('URL de la imagen:', product.img);
 
             if (newName && newPrice && newImage) {
-                products[index] = { name: newName, price: newPrice, img: newImage };
-                renderProducts();
-                alert('✅ Producto actualizado. Recuerda EXPORTAR DATOS y subir el archivo a GitHub para que los clientes vean los cambios.');
+                try {
+                    const response = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ name: newName, price: newPrice, img: newImage })
+                    });
+
+                    if (response.ok) {
+                        await loadProducts();
+                        alert('✅ Producto actualizado exitosamente. Los cambios son inmediatos para todos los clientes.');
+                    } else {
+                        alert('❌ Error al actualizar producto');
+                    }
+                } catch (error) {
+                    alert('❌ Error de conexión: ' + error.message);
+                }
             }
         }
 
@@ -388,98 +443,8 @@
             window.location.href = 'login.html';
         }
 
-        function exportProducts() {
-            const dataStr = JSON.stringify(products, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'productos_nancy_sneakers.json';
-            link.click();
-            URL.revokeObjectURL(url);
-            alert('✅ Datos exportados exitosamente. Guarda el archivo en tu computadora.');
-        }
-
-        function showTokenSetup() {
-            const savedToken = localStorage.getItem('github_token');
-            const tokenInput = prompt(
-                '⚙️ CONFIGURACIÓN DE GITHUB\n\n' +
-                'Para guardar cambios automáticamente, necesitas un token de GitHub.\n\n' +
-                '📋 PASOS PARA CREAR EL TOKEN (solo una vez):\n' +
-                '1. Ve a: https://github.com/settings/tokens\n' +
-                '2. Haz clic en "Generate new token" (classic)\n' +
-                '3. Escribe un nombre (ej: Nancy Sneakers)\n' +
-                '4. Marca la casilla "repo" (para tener acceso completo)\n' +
-                '5. Haz clic en "Generate token"\n' +
-                '6. Copia el token que aparece (empieza con ghp_)\n\n' +
-                'Token actual: ' + (savedToken ? '✅ Ya configurado' : '❌ No configurado') + '\n\n' +
-                'Pega tu token aquí (o deja vacío para cancelar):',
-                savedToken || ''
-            );
-            
-            if (tokenInput && tokenInput.trim()) {
-                localStorage.setItem('github_token', tokenInput.trim());
-                alert('✅ Token guardado exitosamente. Ahora puedes usar "Guardar en GitHub".');
-            }
-        }
-
-        async function saveToGitHub() {
-            const token = localStorage.getItem('github_token');
-            
-            if (!token) {
-                alert('❌ Primero debes configurar el token de GitHub.\n\nHaz clic en "⚙️ CONFIGURAR GITHUB" y sigue las instrucciones.');
-                return;
-            }
-
-            const confirmSave = confirm('¿Estás seguro de guardar los cambios en GitHub?\n\nEsto actualizará los productos para todos los clientes.');
-            if (!confirmSave) return;
-
-            try {
-                const content = JSON.stringify(products, null, 2);
-                const message = 'Actualizar productos desde panel de administración';
-                
-                // Primero obtener el archivo actual para obtener el SHA
-                const getFileResponse = await fetch('https://api.github.com/repos/Elkaaz/Pagina-web-Nancy/contents/productos.json', {
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-
-                let sha = null;
-                if (getFileResponse.ok) {
-                    const fileData = await getFileResponse.json();
-                    sha = fileData.sha;
-                }
-
-                // Actualizar o crear el archivo
-                const response = await fetch('https://api.github.com/repos/Elkaaz/Pagina-web-Nancy/contents/productos.json', {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/vnd.github.v3+json'
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        content: btoa(content),
-                        sha: sha
-                    })
-                });
-
-                if (response.ok) {
-                    alert('✅ Cambios guardados exitosamente en GitHub.\n\nLos clientes verán los cambios en 1-2 minutos.');
-                } else {
-                    const error = await response.json();
-                    alert('❌ Error al guardar en GitHub: ' + (error.message || 'Error desconocido'));
-                }
-            } catch (error) {
-                alert('❌ Error de conexión: ' + error.message);
-            }
-        }
-
         // Renderizar productos al cargar
-        renderProducts();
+        loadProducts();
     </script>
 </body>
 </html>

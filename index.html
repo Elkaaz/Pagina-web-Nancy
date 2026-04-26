@@ -815,14 +815,22 @@
     <a href="login.html" class="admin-link">Admin</a>
 
     <script>
-        // --- BASE DE DATOS DESDE ARCHIVO JSON ---
+        // --- CONFIGURACIÓN SUPABASE ---
+        const SUPABASE_URL = 'https://upoggoaofzzxpjwvdoii.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_gS37Hx8qTy7jLR_S-YBd1A_-Frir6CZ';
+
         let products = [];
         let cart = [];
 
-        // Cargar productos desde archivo JSON
+        // Cargar productos desde Supabase
         async function loadProducts() {
             try {
-                const response = await fetch('productos.json');
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
                 products = await response.json();
                 render();
             } catch (error) {
