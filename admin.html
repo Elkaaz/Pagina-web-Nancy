@@ -530,18 +530,70 @@
 
         function editProduct(index) {
             const product = products[index];
-            const newName = prompt('Nuevo nombre del producto:', product.name);
-            const newPrice = prompt('Nuevo precio:', product.price);
-            const newImage = prompt('Nueva URL de la imagen:', product.img);
+            
+            // Llenar el formulario con los datos actuales
+            document.getElementById('product-name').value = product.name;
+            document.getElementById('product-price').value = product.price;
+            document.getElementById('product-image').value = product.img;
+            
+            // Mostrar vista previa de la imagen actual
+            const preview = document.getElementById('image-preview');
+            preview.innerHTML = `<img src="${product.img}" style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px;">`;
+            preview.style.display = 'block';
+            
+            // Cambiar el botón de agregar a actualizar
+            const addBtn = document.querySelector('button[onclick="addProduct()"]');
+            addBtn.textContent = '💾 ACTUALIZAR PRODUCTO';
+            addBtn.onclick = () => updateProduct(product.id);
+            
+            // Mostrar alerta
+            alert('✏️ Modifica los datos y haz clic en "ACTUALIZAR PRODUCTO"');
+        }
 
-            if (newName && newPrice && newImage) {
-                database.ref(`products/${product.id}`).update({
-                    name: newName,
-                    price: newPrice,
-                    img: newImage
-                });
-                alert('✅ Producto actualizado correctamente');
+        async function updateProduct(productId) {
+            const name = document.getElementById('product-name').value.trim();
+            const price = document.getElementById('product-price').value.trim();
+            const imageInput = document.getElementById('product-camera');
+            const imageUrlInput = document.getElementById('product-image').value.trim();
+
+            if (!name || !price) {
+                alert('⚠️ Por favor escribe el nombre y el precio del producto');
+                return;
             }
+
+            let imageUrl = imageUrlInput;
+            if (imageInput.files && imageInput.files.length > 0) {
+                try {
+                    imageUrl = await uploadToCloudinary(imageInput.files[0]);
+                } catch (error) {
+                    alert('❌ No pude subir la foto. Intenta de nuevo.');
+                    return;
+                }
+            }
+
+            if (!imageUrl) {
+                alert('⚠️ Por favor escribe la URL de la imagen o toma una foto');
+                return;
+            }
+
+            await database.ref(`products/${productId}`).update({
+                name,
+                price,
+                img: imageUrl
+            });
+
+            alert('✅ ¡Producto actualizado correctamente en la tienda!');
+            
+            // Limpiar formulario y restaurar botón
+            document.getElementById('product-name').value = '';
+            document.getElementById('product-price').value = '';
+            document.getElementById('product-image').value = '';
+            document.getElementById('product-camera').value = '';
+            document.getElementById('image-preview').style.display = 'none';
+            
+            const addBtn = document.querySelector('button[onclick*="updateProduct"]');
+            addBtn.textContent = '➕ AGREGAR PRODUCTO';
+            addBtn.onclick = addProduct;
         }
 
         function viewStore() {
