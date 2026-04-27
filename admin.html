@@ -283,7 +283,13 @@
                 <div class="form-group">
                     <label>URL de la imagen</label>
                     <input type="text" id="product-image" placeholder="https://ejemplo.com/imagen.jpg">
-                    <small style="color: #666; margin-top: 5px; display: block;">Copia la URL de una imagen de internet y pégala aquí</small>
+                </div>
+                <div class="form-group">
+                    <label>O tomar foto con cámara</label>
+                    <input type="file" id="product-camera" accept="image/*" capture="environment" onchange="previewImage(event)">
+                    <div id="image-preview" style="margin-top: 10px; max-width: 200px; display: none;">
+                        <img id="preview-img" style="width: 100%; border-radius: 10px;">
+                    </div>
                 </div>
             </div>
             <button class="btn-add" onclick="addProduct()">AGREGAR PRODUCTO</button>
@@ -434,6 +440,7 @@
         async function addProduct() {
             const name = document.getElementById('product-name').value.trim();
             const price = document.getElementById('product-price').value.trim();
+            const imageInput = document.getElementById('product-camera');
             const imageUrlInput = document.getElementById('product-image').value.trim();
 
             if (!name || !price) {
@@ -441,8 +448,18 @@
                 return;
             }
 
-            if (!imageUrlInput) {
-                alert('⚠️ Por favor escribe la URL de la imagen del producto');
+            let imageUrl = imageUrlInput;
+            if (imageInput.files && imageInput.files.length > 0) {
+                try {
+                    imageUrl = await uploadToImgur(imageInput.files[0]);
+                } catch (error) {
+                    alert('❌ No pude subir la foto. Intenta de nuevo.');
+                    return;
+                }
+            }
+
+            if (!imageUrl) {
+                alert('⚠️ Por favor escribe la URL de la imagen o toma una foto');
                 return;
             }
 
@@ -457,7 +474,7 @@
                     body: JSON.stringify({
                         name: name,
                         price: price,
-                        img: imageUrlInput
+                        img: imageUrl
                     })
                 });
 
@@ -467,6 +484,8 @@
                     document.getElementById('product-name').value = '';
                     document.getElementById('product-price').value = '';
                     document.getElementById('product-image').value = '';
+                    document.getElementById('product-camera').value = '';
+                    document.getElementById('image-preview').style.display = 'none';
                 } else {
                     alert('❌ Hubo un error al guardar el producto. Intenta de nuevo.');
                 }
