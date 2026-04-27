@@ -7,12 +7,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #050505;
-            --accent: #ff3e3e;
-            --white: #ffffff;
-            --gray: #111111;
-            --success: #25d366;
-            --danger: #dc2626;
+            --bg: #1a1a2e;
+            --accent: #e94560;
+            --white: #f5f5f5;
+            --gray: #16213e;
+            --success: #4caf50;
+            --danger: #f44336;
+            --warning: #ff9800;
+            --info: #2196f3;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -21,6 +23,54 @@
             color: var(--white); 
             font-family: 'Inter', sans-serif; 
             padding: 20px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* Sistema de Notificaciones Toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: var(--gray);
+            border-left: 5px solid var(--success);
+            padding: 20px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 350px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+        }
+
+        .toast.warning {
+            border-left-color: var(--warning);
+        }
+
+        .toast.info {
+            border-left-color: var(--info);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
         }
 
         /* HEADER */
@@ -47,26 +97,43 @@
         }
 
         .btn-header {
-            padding: 12px 25px;
-            background: #333;
+            padding: 16px 28px;
+            background: #3a3a5c;
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 1rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
             cursor: pointer;
             transition: 0.3s;
+            min-height: 55px;
         }
 
         .btn-header:hover {
-            background: #555;
+            background: #4a4a6c;
+            transform: translateY(-2px);
+        }
+
+        .btn-header.active {
+            background: var(--accent);
         }
 
         .btn-logout {
             background: var(--danger);
+            margin-left: auto;
         }
 
         .btn-logout:hover {
-            background: #ff4444;
+            background: #d32f2f;
+        }
+
+        .btn-primary {
+            background: var(--success) !important;
+            font-size: 1.2rem;
+            padding: 20px 40px;
+        }
+
+        .btn-primary:hover {
+            background: #45a049 !important;
         }
 
         /* FORMULARIO AGREGAR PRODUCTO */
@@ -97,23 +164,68 @@
         }
 
         .form-group label {
-            margin-bottom: 8px;
-            font-size: 1.1rem;
-            color: #ccc;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            color: #ddd;
+            font-weight: 600;
         }
 
-        .form-group input {
-            padding: 15px;
-            font-size: 1.1rem;
-            background: #1a1a1a;
-            border: 2px solid #333;
-            border-radius: 10px;
+        .form-group input, .form-group textarea {
+            padding: 18px;
+            font-size: 1.2rem;
+            background: #0f0f23;
+            border: 3px solid #3a3a5c;
+            border-radius: 12px;
             color: white;
+            min-height: 55px;
         }
 
-        .form-group input:focus {
+        .form-group input:focus, .form-group textarea:focus {
             outline: none;
             border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.3);
+        }
+
+        .form-group .help-text {
+            font-size: 0.95rem;
+            color: #888;
+            margin-top: 8px;
+        }
+
+        /* Input de archivo personalizado */
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #3a3a5c, #4a4a6c);
+            border: 3px dashed var(--accent);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 1.2rem;
+        }
+
+        .file-upload-label:hover {
+            background: linear-gradient(135deg, #4a4a6c, #5a5a7c);
+            transform: scale(1.02);
+        }
+
+        .file-upload-label i {
+            font-size: 2rem;
         }
 
         .btn-add {
@@ -269,32 +381,44 @@
         </div>
     </div>
 
+    <!-- Sistema de Notificaciones -->
+    <div id="toast-container" class="toast-container"></div>
+
     <!-- SECCIÓN AGREGAR PRODUCTO -->
     <div id="section-add-product">
         <div class="add-product-section">
-            <h2>➕ AGREGAR A TIENDA</h2>
+            <h2>📸 Registrar Nuevo Producto</h2>
+            <p style="color: #888; margin-bottom: 25px; font-size: 1.1rem;">Completa los datos del calzado que quieres vender</p>
+            
             <div class="form-grid">
-                <div class="form-group">
-                    <label>Nombre del producto</label>
-                    <input type="text" id="product-name" placeholder="Ej: Nike Air Max 270">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>¿Cómo se llama este modelo de zapato?</label>
+                    <input type="text" id="product-name" placeholder="Ejemplo: Nike Air Max 270 - Talla 38">
+                    <span class="help-text">Escribe el nombre completo incluyendo marca y modelo</span>
                 </div>
+                
                 <div class="form-group">
-                    <label>Precio (COP)</label>
-                    <input type="number" id="product-price" placeholder="Ej: 450000">
+                    <label>¿Cuánto cuesta? (en pesos colombianos)</label>
+                    <input type="text" id="product-price" placeholder="450.000" oninput="formatPrice(this)">
+                    <span class="help-text">Los puntos se agregan automáticamente</span>
                 </div>
-                <div class="form-group">
-                    <label>URL de la imagen</label>
-                    <input type="text" id="product-image" placeholder="https://ejemplo.com/imagen.jpg">
-                </div>
-                <div class="form-group">
-                    <label>O tomar foto con cámara</label>
-                    <input type="file" id="product-camera" accept="image/*" capture="environment" onchange="previewImage(event)">
-                    <div id="image-preview" style="margin-top: 10px; max-width: 200px; display: none;">
-                        <img id="preview-img" style="width: 100%; border-radius: 10px;">
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>📷 Sube una foto del producto</label>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="product-camera" accept="image/*" capture="environment" onchange="previewImage(event)">
+                        <label for="product-camera" class="file-upload-label">
+                            <span>📷 Tomar foto con el celular o elegir de la galería</span>
+                        </label>
                     </div>
+                    <div id="image-preview" style="margin-top: 15px; max-width: 300px; display: none; border: 3px solid var(--success); border-radius: 15px; overflow: hidden;">
+                        <img id="preview-img" style="width: 100%; display: block;">
+                        <div style="background: var(--success); color: white; padding: 10px; text-align: center; font-weight: bold;">✅ Imagen cargada correctamente</div>
+                    </div>
+                    <input type="hidden" id="product-image">
                 </div>
             </div>
-            <button class="btn-add" onclick="addProduct()">AGREGAR PRODUCTO</button>
+            <button class="btn-add btn-primary" onclick="addProduct()">💾 GUARDAR PRODUCTO EN LA TIENDA</button>
         </div>
     </div>
 
@@ -527,7 +651,7 @@
             const count = document.getElementById('product-count');
             
             if (!grid) {
-                alert('Error: No se encontró el elemento products-grid');
+                showToast('Error al cargar el inventario. Recarga la página.', 'error');
                 return;
             }
             
@@ -563,39 +687,44 @@
             const imageUrlInput = document.getElementById('product-image').value.trim();
 
             if (!name || !price) {
-                alert('⚠️ Por favor escribe el nombre y el precio del producto');
+                showToast('Por favor escribe el nombre y el precio del producto', 'warning');
                 return;
             }
 
             let imageUrl = imageUrlInput;
             if (imageInput.files && imageInput.files.length > 0) {
                 try {
+                    showToast('Subiendo imagen, por favor espera...', 'info', 2000);
                     imageUrl = await uploadToCloudinary(imageInput.files[0]);
                 } catch (error) {
-                    alert('❌ No pude subir la foto. Intenta de nuevo.');
+                    showToast('Error al subir la imagen: ' + error.message, 'error');
                     return;
                 }
             }
 
             if (!imageUrl) {
-                alert('⚠️ Por favor escribe la URL de la imagen o toma una foto');
+                showToast('Por favor sube una foto del producto', 'warning');
                 return;
             }
 
-            const newProductRef = database.ref('products').push();
-            await newProductRef.set({
-                name,
-                price,
-                img: imageUrl,
-                id: newProductRef.key
-            });
+            try {
+                const newProductRef = database.ref('products').push();
+                await newProductRef.set({
+                    name,
+                    price,
+                    img: imageUrl,
+                    id: newProductRef.key
+                });
 
-            alert('✅ ¡Producto guardado correctamente en la tienda!');
-            document.getElementById('product-name').value = '';
-            document.getElementById('product-price').value = '';
-            document.getElementById('product-image').value = '';
-            document.getElementById('product-camera').value = '';
-            document.getElementById('image-preview').style.display = 'none';
+                showToast('¡Producto guardado correctamente en la tienda!', 'success');
+                document.getElementById('product-name').value = '';
+                document.getElementById('product-price').value = '';
+                document.getElementById('product-image').value = '';
+                document.getElementById('product-camera').value = '';
+                document.getElementById('image-preview').style.display = 'none';
+            } catch (error) {
+                showToast('Error al guardar: ' + error.message, 'error');
+            }
         }
 
         async function uploadToCloudinary(file) {
@@ -626,6 +755,40 @@
             }
         }
 
+        // Sistema de Notificaciones Toast
+        function showToast(message, type = 'success', duration = 4000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            toast.innerHTML = `
+                <span style="font-size: 1.5rem;">${icons[type]}</span>
+                <span style="font-size: 1.1rem; font-weight: 500;">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // Formateo automático de precios
+        function formatPrice(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value) {
+                input.value = parseInt(value).toLocaleString('es-CO');
+            }
+        }
+
         async function generateSignature(timestamp, apiSecret) {
             const stringToSign = `timestamp=${timestamp}${apiSecret}`;
             const encoder = new TextEncoder();
@@ -639,8 +802,11 @@
         function deleteProduct(index) {
             if (confirm('¿Estás segura de que quieres borrar este producto? Esta acción no se puede deshacer.')) {
                 const product = products[index];
-                database.ref(`products/${product.id}`).remove();
-                alert('✅ Producto borrado de la tienda');
+                database.ref(`products/${product.id}`).remove().then(() => {
+                    showToast('Producto borrado correctamente', 'success');
+                }).catch((error) => {
+                    showToast('Error al borrar: ' + error.message, 'error');
+                });
             }
         }
 
@@ -662,8 +828,8 @@
             addBtn.textContent = '💾 ACTUALIZAR PRODUCTO';
             addBtn.onclick = () => updateProduct(product.id);
             
-            // Mostrar alerta
-            alert('✏️ Modifica los datos y haz clic en "ACTUALIZAR PRODUCTO"');
+            // Mostrar notificación
+            showToast('Modifica los datos y presiona "ACTUALIZAR PRODUCTO"', 'info');
         }
 
         async function updateProduct(productId) {
@@ -673,32 +839,36 @@
             const imageUrlInput = document.getElementById('product-image').value.trim();
 
             if (!name || !price) {
-                alert('⚠️ Por favor escribe el nombre y el precio del producto');
+                showToast('Por favor escribe el nombre y el precio del producto', 'warning');
                 return;
             }
 
             let imageUrl = imageUrlInput;
             if (imageInput.files && imageInput.files.length > 0) {
                 try {
+                    showToast('Subiendo nueva imagen...', 'info', 2000);
                     imageUrl = await uploadToCloudinary(imageInput.files[0]);
                 } catch (error) {
-                    alert('❌ No pude subir la foto. Intenta de nuevo.');
+                    showToast('No pude subir la foto. Intenta de nuevo.', 'error');
                     return;
                 }
             }
 
             if (!imageUrl) {
-                alert('⚠️ Por favor escribe la URL de la imagen o toma una foto');
+                showToast('Por favor sube una foto del producto', 'warning');
                 return;
             }
 
-            await database.ref(`products/${productId}`).update({
-                name,
-                price,
-                img: imageUrl
-            });
-
-            alert('✅ ¡Producto actualizado correctamente en la tienda!');
+            try {
+                await database.ref(`products/${productId}`).update({
+                    name,
+                    price,
+                    img: imageUrl
+                });
+                showToast('¡Producto actualizado correctamente!', 'success');
+            } catch (error) {
+                showToast('Error al actualizar: ' + error.message, 'error');
+            }
             
             // Limpiar formulario y restaurar botón
             document.getElementById('product-name').value = '';
@@ -784,8 +954,11 @@
                 welcome_text: document.getElementById('setting-welcome').value,
                 shipping_base: document.getElementById('setting-shipping').value
             };
-            database.ref('settings').set(settings);
-            alert('✅ ¡Configuración guardada correctamente!');
+            database.ref('settings').set(settings).then(() => {
+                showToast('Configuración guardada correctamente', 'success');
+            }).catch((error) => {
+                showToast('Error al guardar: ' + error.message, 'error');
+            });
         }
 
         function loadOrders() {
@@ -833,8 +1006,11 @@
         }
 
         function updateOrderStatus(orderId, status) {
-            database.ref(`orders/${orderId}`).update({ status });
-            alert('✅ Estado del pedido actualizado');
+            database.ref(`orders/${orderId}`).update({ status }).then(() => {
+                showToast('Estado del pedido actualizado', 'success');
+            }).catch((error) => {
+                showToast('Error: ' + error.message, 'error');
+            });
         }
 
         function loadReturns() {
@@ -880,8 +1056,11 @@
         }
 
         function updateReturnStatus(returnId, status) {
-            database.ref(`returns/${returnId}`).update({ status });
-            alert('✅ Estado de la solicitud actualizado');
+            database.ref(`returns/${returnId}`).update({ status }).then(() => {
+                showToast('Estado de la solicitud actualizado', 'success');
+            }).catch((error) => {
+                showToast('Error: ' + error.message, 'error');
+            });
         }
 
         function searchProducts() {
@@ -1074,9 +1253,9 @@
             };
             
             database.ref('design').set(design).then(() => {
-                alert('✅ Diseño guardado correctamente');
+                showToast('Diseño guardado correctamente', 'success');
             }).catch((error) => {
-                alert('❌ Error al guardar: ' + error.message);
+                showToast('Error al guardar: ' + error.message, 'error');
             });
         }
 
