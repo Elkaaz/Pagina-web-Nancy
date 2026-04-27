@@ -256,7 +256,8 @@
     <div class="admin-header">
         <h1>🔧 PANEL ADMINISTRADOR - Nancy's Sandals</h1>
         <div class="header-buttons">
-            <button class="btn-header" onclick="showSection('products')">📦 INVENTARIO</button>
+            <button class="btn-header" onclick="showSection('add-product')">➕ AGREGAR PRODUCTO</button>
+            <button class="btn-header" onclick="showSection('inventory')">📦 INVENTARIO</button>
             <button class="btn-header" onclick="showSection('orders')">📋 PEDIDOS</button>
             <button class="btn-header" onclick="showSection('customers')">👥 CLIENTES</button>
             <button class="btn-header" onclick="showSection('dashboard')">📊 RESUMEN</button>
@@ -267,8 +268,8 @@
         </div>
     </div>
 
-    <!-- SECCIÓN PRODUCTOS -->
-    <div id="section-products">
+    <!-- SECCIÓN AGREGAR PRODUCTO -->
+    <div id="section-add-product">
         <div class="add-product-section">
             <h2>➕ AGREGAR A TIENDA</h2>
             <div class="form-grid">
@@ -294,7 +295,10 @@
             </div>
             <button class="btn-add" onclick="addProduct()">AGREGAR PRODUCTO</button>
         </div>
-        
+    </div>
+
+    <!-- SECCIÓN INVENTARIO -->
+    <div id="section-inventory" style="display: none;">
         <div class="products-section">
             <h2>📦 INVENTARIO</h2>
             <div style="margin-bottom: 20px;">
@@ -619,13 +623,15 @@
         }
 
         function showSection(section) {
-            document.getElementById('section-products').style.display = section === 'products' ? 'block' : 'none';
+            document.getElementById('section-add-product').style.display = section === 'add-product' ? 'block' : 'none';
+            document.getElementById('section-inventory').style.display = section === 'inventory' ? 'block' : 'none';
             document.getElementById('section-settings').style.display = section === 'settings' ? 'block' : 'none';
             document.getElementById('section-orders').style.display = section === 'orders' ? 'block' : 'none';
             document.getElementById('section-returns').style.display = section === 'returns' ? 'block' : 'none';
             document.getElementById('section-customers').style.display = section === 'customers' ? 'block' : 'none';
             document.getElementById('section-dashboard').style.display = section === 'dashboard' ? 'block' : 'none';
             
+            if (section === 'inventory') loadProducts();
             if (section === 'settings') loadSettings();
             if (section === 'orders') loadOrders();
             if (section === 'returns') loadReturns();
@@ -890,8 +896,8 @@
             });
         }
 
-        // Renderizar productos al cargar
-        loadProducts();
+        // No cargar productos automáticamente al inicio
+        // Se cargan cuando se va a la sección de inventario
     </script>
 </body>
 </html>
