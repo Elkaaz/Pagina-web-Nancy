@@ -402,28 +402,18 @@
         let products = [];
 
         function loadProducts() {
-            console.log('Iniciando carga de productos...');
             database.ref('products').on('value', (snapshot) => {
-                console.log('Snapshot recibido:', snapshot.val());
                 products = [];
                 snapshot.forEach((childSnapshot) => {
                     products.push(childSnapshot.val());
                 });
-                console.log('Productos cargados en admin:', products);
                 renderProducts();
-            }, (error) => {
-                console.error('Error al cargar productos:', error);
             });
         }
 
         function renderProducts() {
             const grid = document.getElementById('products-grid');
             const count = document.getElementById('product-count');
-            
-            if (!grid) {
-                console.error('Elemento products-grid no encontrado');
-                return;
-            }
             
             count.textContent = products.length;
             
