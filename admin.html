@@ -305,7 +305,7 @@
                 <input type="text" id="search-product" placeholder="🔍 Buscar producto..." onkeyup="searchProducts()" style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem;">
                 <button class="btn-header" onclick="loadProducts()">🔄 ACTUALIZAR</button>
             </div>
-            <div id="products-grid"></div>
+            <div id="products-grid" class="products-grid"></div>
         </div>
     </div>
 
@@ -647,7 +647,21 @@
             document.getElementById('section-dashboard').style.display = section === 'dashboard' ? 'block' : 'none';
             
             if (section === 'inventory') {
-                loadProducts();
+                // Cargar productos directamente sin listener
+                database.ref('products').once('value').then((snapshot) => {
+                    products = [];
+                    snapshot.forEach((childSnapshot) => {
+                        products.push(childSnapshot.val());
+                    });
+                    if (products.length === 0) {
+                        products = [
+                            { name: 'Nike Air Max 270', price: '450000', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600' },
+                            { name: 'Adidas Ultraboost', price: '380000', img: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=600' },
+                            { name: 'Puma RS-X', price: '320000', img: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&q=80&w=600' }
+                        ];
+                    }
+                    renderProducts();
+                });
             }
             if (section === 'settings') loadSettings();
             if (section === 'orders') loadOrders();
