@@ -1270,58 +1270,21 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN SUPABASE ---
-        const SUPABASE_URL = 'https://upoggoaofzzxpjwvdoii.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_gS37Hx8qTy7jLR_S-YBd1A_-Frir6CZ';
-
-        let products = [];
+        let products = JSON.parse(localStorage.getItem('products')) || [];
         let cart = [];
         let settings = {};
 
-        // Cargar configuración desde Supabase
-        async function loadSettings() {
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/settings`, {
-                    headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`
-                    }
-                });
-                const settingsData = await response.json();
-                
-                settingsData.forEach(setting => {
-                    settings[setting.key] = setting.value;
-                });
-                
-                // Aplicar configuración al sitio
-                if (settings.whatsapp) {
-                    document.querySelector('.whatsapp-link').href = `https://wa.me/${settings.whatsapp}`;
-                }
-            } catch (error) {
-                console.error('Error al cargar configuración:', error);
-            }
-        }
-
-        // Cargar productos desde Supabase
-        async function loadProducts() {
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
-                    headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`
-                    }
-                });
-                products = await response.json();
-                render();
-            } catch (error) {
-                console.error('Error al cargar productos:', error);
-                // Fallback a productos por defecto si falla la carga
+        function loadProducts() {
+            products = JSON.parse(localStorage.getItem('products')) || [];
+            if (products.length === 0) {
+                // Fallback a productos por defecto
                 products = [
-                    { name: "Nike Air Max 270", price: "450.000", img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=400" },
-                    { name: "Adidas Ultraboost", price: "380.000", img: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=400" }
+                    { name: 'Nike Air Max 270', price: '450000', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600' },
+                    { name: 'Adidas Ultraboost', price: '380000', img: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=600' },
+                    { name: 'Puma RS-X', price: '320000', img: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&q=80&w=600' }
                 ];
-                render();
             }
+            renderProducts();
         }
 
         // --- RENDERIZADO ---
@@ -1528,41 +1491,24 @@
             const shippingCost = cityRates[city][shippingCompany] || 15000;
             const total = subtotal + shippingCost;
 
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        customer_name: name,
-                        customer_phone: phone,
-                        customer_address: address,
-                        customer_city: city,
-                        products: JSON.stringify(cart),
-                        subtotal: subtotal.toString(),
-                        shipping_cost: shippingCost.toString(),
-                        total: total.toString(),
-                        shipping_company: shippingCompany,
-                        payment_method: paymentMethod,
-                        payment_status: 'pending',
-                        status: 'pending'
-                    })
-                });
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders.push({
+                customer_name: name,
+                customer_phone: phone,
+                customer_address: address,
+                customer_city: city,
+                products: cart,
+                total: total,
+                shipping_company: shippingCompany,
+                created_at: new Date().toISOString(),
+                status: 'pending'
+            });
+            localStorage.setItem('orders', JSON.stringify(orders));
 
-                if (response.ok) {
-                    alert('✅ Pedido realizado exitosamente. Te contactaremos pronto.');
-                    cart = [];
-                    updateCartUI();
-                    closeCheckout();
-                } else {
-                    alert('❌ Error al realizar el pedido');
-                }
-            } catch (error) {
-                alert('❌ Error de conexión: ' + error.message);
-            }
+            alert('✅ ¡Pedido realizado con éxito! Te contactaremos por WhatsApp para confirmar.');
+            closeCheckout();
+            cart = [];
+            updateCartUI();
         }
 
         // --- FUNCIONES DE CAMBIO/DEVOLUCIÓN ---
@@ -1586,30 +1532,6 @@
             }
         }
 
-        async function uploadReturnImageToSupabase(file) {
-            const fileName = `${Date.now()}_return_${file.name}`;
-            const filePath = `returns/${fileName}`;
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${filePath}`, {
-                method: 'POST',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'multipart/form-data'
-                },
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error('Error al subir imagen');
-            }
-
-            return `${SUPABASE_URL}/storage/v1/object/public/${filePath}`;
-        }
-
         async function submitReturn() {
             const name = document.getElementById('return-name').value.trim();
             const phone = document.getElementById('return-phone').value.trim();
@@ -1624,54 +1546,47 @@
                 return;
             }
 
-            if (!imageInput.files || imageInput.files.length === 0) {
-                alert('⚠️ Por favor toma o selecciona una foto del producto');
-                return;
+            let imageUrl = '';
+            if (imageInput.files && imageInput.files.length > 0) {
+                imageUrl = await convertImageToBase64(imageInput.files[0]);
             }
 
-            try {
-                const imageUrl = await uploadReturnImageToSupabase(imageInput.files[0]);
+            const returns = JSON.parse(localStorage.getItem('returns')) || [];
+            returns.push({
+                order_id: orderId || null,
+                customer_name: name,
+                customer_phone: phone,
+                product_name: product,
+                product_image: imageUrl,
+                reason: reason,
+                return_type: returnType,
+                status: 'pending',
+                created_at: new Date().toISOString()
+            });
+            localStorage.setItem('returns', JSON.stringify(returns));
 
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/returns`, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        order_id: orderId || null,
-                        customer_name: name,
-                        customer_phone: phone,
-                        product_name: product,
-                        product_image: imageUrl,
-                        reason: reason,
-                        return_type: returnType,
-                        status: 'pending'
-                    })
-                });
+            alert('✅ Solicitud de cambio/devolución enviada exitosamente. Te contactaremos pronto.');
+            closeReturnModal();
+            // Limpiar formulario
+            document.getElementById('return-name').value = '';
+            document.getElementById('return-phone').value = '';
+            document.getElementById('return-order-id').value = '';
+            document.getElementById('return-product').value = '';
+            document.getElementById('return-image').value = '';
+            document.getElementById('return-reason').value = '';
+            document.getElementById('return-image-preview').style.display = 'none';
+        }
 
-                if (response.ok) {
-                    alert('✅ Solicitud de cambio/devolución enviada exitosamente. Te contactaremos pronto.');
-                    closeReturnModal();
-                    // Limpiar formulario
-                    document.getElementById('return-name').value = '';
-                    document.getElementById('return-phone').value = '';
-                    document.getElementById('return-order-id').value = '';
-                    document.getElementById('return-product').value = '';
-                    document.getElementById('return-image').value = '';
-                    document.getElementById('return-reason').value = '';
-                    document.getElementById('return-image-preview').style.display = 'none';
-                } else {
-                    alert('❌ Error al enviar solicitud');
-                }
-            } catch (error) {
-                alert('❌ Error: ' + error.message);
-            }
+        function convertImageToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
         }
 
         // Inicializar
-        loadSettings();
         loadProducts();
     </script>
 </body>
