@@ -408,12 +408,7 @@
         let productsListener = null;
 
         function loadProducts() {
-            // Remover listener anterior si existe
-            if (productsListener) {
-                database.ref('products').off('value', productsListener);
-            }
-            
-            productsListener = database.ref('products').on('value', (snapshot) => {
+            database.ref('products').once('value').then((snapshot) => {
                 products = [];
                 snapshot.forEach((childSnapshot) => {
                     products.push(childSnapshot.val());
@@ -427,6 +422,9 @@
                     ];
                 }
                 renderProducts();
+            }).catch((error) => {
+                console.error('Error al cargar productos:', error);
+                alert('Error al cargar productos: ' + error.message);
             });
         }
 
