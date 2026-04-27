@@ -261,6 +261,7 @@
             <button class="btn-header" onclick="showSection('orders')">📋 PEDIDOS</button>
             <button class="btn-header" onclick="showSection('customers')">👥 CLIENTES</button>
             <button class="btn-header" onclick="showSection('dashboard')">📊 RESUMEN</button>
+            <button class="btn-header" onclick="showSection('design')">🎨 DISEÑO</button>
             <button class="btn-header" onclick="showSection('settings')">⚙️ CONFIGURACIÓN</button>
             <button class="btn-header" onclick="showSection('returns')">🔄 DEVOLUCIONES</button>
             <button class="btn-header" onclick="viewStore()">👁️ VER TIENDA</button>
@@ -306,6 +307,75 @@
                 <button class="btn-header" onclick="loadProducts()">🔄 ACTUALIZAR</button>
             </div>
             <div id="products-grid" class="products-grid"></div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN DISEÑO -->
+    <div id="section-design" style="display: none;">
+        <div class="add-product-section">
+            <h2>🎨 DISEÑO DE LA TIENDA</h2>
+            <p style="margin-bottom: 20px; color: #888;">Personaliza los colores, imágenes y textos de la página principal</p>
+            
+            <h3 style="color: var(--accent); margin: 20px 0 15px 0;">🎨 Colores</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Color de fondo</label>
+                    <input type="color" id="design-bg-color" value="#050505">
+                    <input type="text" id="design-bg-color-text" placeholder="#050505" style="margin-top: 5px;">
+                </div>
+                <div class="form-group">
+                    <label>Color de acento (botones)</label>
+                    <input type="color" id="design-accent-color" value="#ff3e3e">
+                    <input type="text" id="design-accent-color-text" placeholder="#ff3e3e" style="margin-top: 5px;">
+                </div>
+                <div class="form-group">
+                    <label>Color de texto</label>
+                    <input type="color" id="design-text-color" value="#ffffff">
+                    <input type="text" id="design-text-color-text" placeholder="#ffffff" style="margin-top: 5px;">
+                </div>
+                <div class="form-group">
+                    <label>Color de tarjetas</label>
+                    <input type="color" id="design-card-color" value="#111111">
+                    <input type="text" id="design-card-color-text" placeholder="#111111" style="margin-top: 5px;">
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent); margin: 20px 0 15px 0;">🖼️ Imagen Principal (Banner)</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>URL de imagen del banner</label>
+                    <input type="text" id="design-banner-image" placeholder="https://ejemplo.com/banner.jpg">
+                </div>
+                <div class="form-group">
+                    <label>O subir nueva imagen</label>
+                    <input type="file" id="design-banner-file" accept="image/*">
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent); margin: 20px 0 15px 0;">📝 Textos</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Título de la tienda</label>
+                    <input type="text" id="design-store-title" placeholder="SNEAKER VAULT">
+                </div>
+                <div class="form-group">
+                    <label>Subtítulo / Eslogan</label>
+                    <input type="text" id="design-store-subtitle" placeholder="Los mejores sneakers deportivos">
+                </div>
+                <div class="form-group" style="grid-column: 1/-1;">
+                    <label>Texto de bienvenida</label>
+                    <textarea id="design-welcome-text" rows="3" placeholder="Bienvenido a nuestra tienda..."></textarea>
+                </div>
+            </div>
+
+            <h3 style="color: var(--accent); margin: 20px 0 15px 0;">📋 Productos Destacados</h3>
+            <p style="color: #888; margin-bottom: 15px;">Selecciona qué productos aparecerán en la página principal</p>
+            <div id="design-featured-products" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <!-- Los productos se cargarán aquí dinámicamente -->
+            </div>
+
+            <button class="btn-add" onclick="saveDesign()">💾 GUARDAR DISEÑO</button>
+            <button class="btn-add" onclick="previewDesign()" style="background: #333; margin-left: 10px;">👁️ VISTA PREVIA</button>
         </div>
     </div>
 
@@ -405,16 +475,43 @@
         }
 
         let products = [];
-        let productsListener = null;
+        let inventoryListener = null;
 
-        function loadProducts() {
-            database.ref('products').on('value', (snapshot) => {
+        // Funciones para el inventario en tiempo real
+        function startInventoryListener() {
+            if (inventoryListener) return; // Ya está activo
+            
+            inventoryListener = database.ref('products').on('value', (snapshot) => {
                 products = [];
                 snapshot.forEach((childSnapshot) => {
                     products.push(childSnapshot.val());
                 });
                 if (products.length === 0) {
-                    // Fallback a productos por defecto
+                    products = [
+                        { name: 'Nike Air Max 270', price: '450000', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600' },
+                        { name: 'Adidas Ultraboost', price: '380000', img: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=600' },
+                        { name: 'Puma RS-X', price: '320000', img: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&q=80&w=600' }
+                    ];
+                }
+                renderProducts();
+            });
+        }
+
+        function stopInventoryListener() {
+            if (inventoryListener) {
+                database.ref('products').off('value', inventoryListener);
+                inventoryListener = null;
+            }
+        }
+
+        function loadProducts() {
+            // Fuerza una recarga manual del inventario
+            database.ref('products').once('value').then((snapshot) => {
+                products = [];
+                snapshot.forEach((childSnapshot) => {
+                    products.push(childSnapshot.val());
+                });
+                if (products.length === 0) {
                     products = [
                         { name: 'Nike Air Max 270', price: '450000', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600' },
                         { name: 'Adidas Ultraboost', price: '380000', img: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=600' },
@@ -647,22 +744,13 @@
             document.getElementById('section-dashboard').style.display = section === 'dashboard' ? 'block' : 'none';
             
             if (section === 'inventory') {
-                // Cargar productos directamente sin listener
-                database.ref('products').once('value').then((snapshot) => {
-                    products = [];
-                    snapshot.forEach((childSnapshot) => {
-                        products.push(childSnapshot.val());
-                    });
-                    if (products.length === 0) {
-                        products = [
-                            { name: 'Nike Air Max 270', price: '450000', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600' },
-                            { name: 'Adidas Ultraboost', price: '380000', img: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=600' },
-                            { name: 'Puma RS-X', price: '320000', img: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&q=80&w=600' }
-                        ];
-                    }
-                    renderProducts();
-                });
+                // Iniciar listener en tiempo real para el inventario
+                startInventoryListener();
+            } else {
+                // Detener listener cuando salimos del inventario
+                stopInventoryListener();
             }
+            if (section === 'design') loadDesign();
             if (section === 'settings') loadSettings();
             if (section === 'orders') loadOrders();
             if (section === 'returns') loadReturns();
@@ -927,8 +1015,75 @@
             });
         }
 
-        // Cargar productos al inicio para que el listener esté activo
-        loadProducts();
+        // Funciones para el panel de diseño
+        function loadDesign() {
+            database.ref('design').on('value', (snapshot) => {
+                const design = snapshot.val() || {};
+                document.getElementById('design-bg-color').value = design.bgColor || '#050505';
+                document.getElementById('design-bg-color-text').value = design.bgColor || '#050505';
+                document.getElementById('design-accent-color').value = design.accentColor || '#ff3e3e';
+                document.getElementById('design-accent-color-text').value = design.accentColor || '#ff3e3e';
+                document.getElementById('design-text-color').value = design.textColor || '#ffffff';
+                document.getElementById('design-text-color-text').value = design.textColor || '#ffffff';
+                document.getElementById('design-card-color').value = design.cardColor || '#111111';
+                document.getElementById('design-card-color-text').value = design.cardColor || '#111111';
+                document.getElementById('design-banner-image').value = design.bannerImage || '';
+                document.getElementById('design-store-title').value = design.storeTitle || "SNEAKER VAULT";
+                document.getElementById('design-store-subtitle').value = design.storeSubtitle || "Los mejores sneakers deportivos";
+                document.getElementById('design-welcome-text').value = design.welcomeText || "Bienvenido a nuestra tienda...";
+            });
+
+            // Cargar productos para selección de destacados
+            database.ref('products').once('value').then((snapshot) => {
+                const productsList = [];
+                snapshot.forEach((childSnapshot) => {
+                    productsList.push(childSnapshot.val());
+                });
+                
+                const container = document.getElementById('design-featured-products');
+                if (productsList.length === 0) {
+                    container.innerHTML = '<p style="color: #666;">No hay productos disponibles.</p>';
+                    return;
+                }
+                
+                container.innerHTML = productsList.map((p, i) => `
+                    <div style="background: var(--gray); padding: 15px; border-radius: 10px; border: 2px solid #333;">
+                        <img src="${p.img}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">
+                        <div style="font-weight: bold; margin-bottom: 5px;">${p.name}</div>
+                        <div style="color: #888; margin-bottom: 10px;">$${p.price}</div>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <input type="checkbox" class="featured-checkbox" value="${p.id}" ${p.featured ? 'checked' : ''}>
+                            <span>Destacado</span>
+                        </label>
+                    </div>
+                `).join('');
+            });
+        }
+
+        function saveDesign() {
+            const design = {
+                bgColor: document.getElementById('design-bg-color').value,
+                accentColor: document.getElementById('design-accent-color').value,
+                textColor: document.getElementById('design-text-color').value,
+                cardColor: document.getElementById('design-card-color').value,
+                bannerImage: document.getElementById('design-banner-image').value,
+                storeTitle: document.getElementById('design-store-title').value,
+                storeSubtitle: document.getElementById('design-store-subtitle').value,
+                welcomeText: document.getElementById('design-welcome-text').value
+            };
+            
+            database.ref('design').set(design).then(() => {
+                alert('✅ Diseño guardado correctamente');
+            }).catch((error) => {
+                alert('❌ Error al guardar: ' + error.message);
+            });
+        }
+
+        function previewDesign() {
+            window.open('index.html', '_blank');
+        }
+
+        // No cargar productos automáticamente - se cargan al entrar al inventario
     </script>
 </body>
 </html>

@@ -1289,6 +1289,44 @@
         let cart = [];
         let settings = {};
 
+        // Cargar diseño desde Firebase
+        function loadDesign() {
+            database.ref('design').on('value', (snapshot) => {
+                const design = snapshot.val() || {};
+                
+                // Aplicar colores CSS
+                if (design.bgColor) {
+                    document.documentElement.style.setProperty('--primary', design.accentColor || '#e91e8c');
+                    document.body.style.backgroundColor = design.bgColor;
+                }
+                if (design.textColor) {
+                    document.documentElement.style.setProperty('--text-dark', design.textColor);
+                    document.body.style.color = design.textColor;
+                }
+                
+                // Aplicar textos
+                if (design.storeTitle) {
+                    document.querySelector('.hero-content h1').textContent = design.storeTitle;
+                    document.title = design.storeTitle;
+                }
+                if (design.storeSubtitle) {
+                    document.querySelector('.hero-content p').textContent = design.storeSubtitle;
+                }
+                if (design.welcomeText) {
+                    const welcomeEl = document.querySelector('.section-title');
+                    if (welcomeEl) welcomeEl.textContent = design.welcomeText;
+                }
+                
+                // Aplicar imagen de banner
+                if (design.bannerImage) {
+                    const heroSection = document.querySelector('.hero');
+                    if (heroSection) {
+                        heroSection.style.backgroundImage = `linear-gradient(135deg, rgba(233, 30, 140, 0.9), rgba(156, 39, 176, 0.8)), url('${design.bannerImage}')`;
+                    }
+                }
+            });
+        }
+
         function loadProducts() {
             database.ref('products').on('value', (snapshot) => {
                 products = [];
@@ -1645,6 +1683,7 @@
         }
 
         // Inicializar
+        loadDesign();
         loadProducts();
     </script>
 </body>
