@@ -301,8 +301,9 @@
     <div id="section-inventory" style="display: none;">
         <div class="products-section">
             <h2>📦 INVENTARIO</h2>
-            <div style="margin-bottom: 20px;">
-                <input type="text" id="search-product" placeholder="🔍 Buscar producto..." onkeyup="searchProducts()" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem;">
+            <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+                <input type="text" id="search-product" placeholder="🔍 Buscar producto..." onkeyup="searchProducts()" style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem;">
+                <button class="btn-header" onclick="loadProducts()">🔄 ACTUALIZAR</button>
             </div>
             <div id="products-grid"></div>
         </div>
@@ -418,6 +419,11 @@
         function renderProducts() {
             const grid = document.getElementById('products-grid');
             const count = document.getElementById('product-count');
+            
+            if (!grid) {
+                alert('Error: No se encontró el elemento products-grid');
+                return;
+            }
             
             count.textContent = products.length;
             
