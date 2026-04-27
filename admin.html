@@ -407,6 +407,7 @@
                 snapshot.forEach((childSnapshot) => {
                     products.push(childSnapshot.val());
                 });
+                console.log('Productos cargados en admin:', products);
                 renderProducts();
             });
         }
@@ -414,6 +415,11 @@
         function renderProducts() {
             const grid = document.getElementById('products-grid');
             const count = document.getElementById('product-count');
+            
+            if (!grid) {
+                console.error('Elemento products-grid no encontrado');
+                return;
+            }
             
             count.textContent = products.length;
             
@@ -591,7 +597,8 @@
             document.getElementById('product-camera').value = '';
             document.getElementById('image-preview').style.display = 'none';
             
-            const addBtn = document.querySelector('button[onclick*="updateProduct"]');
+            // Restaurar botón de agregar
+            const addBtn = document.querySelector('.btn-add');
             addBtn.textContent = '➕ AGREGAR PRODUCTO';
             addBtn.onclick = addProduct;
         }
