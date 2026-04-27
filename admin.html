@@ -412,6 +412,14 @@
                 snapshot.forEach((childSnapshot) => {
                     products.push(childSnapshot.val());
                 });
+                if (products.length === 0) {
+                    // Fallback a productos por defecto
+                    products = [
+                        { name: 'Nike Air Max 270', price: '450000', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600' },
+                        { name: 'Adidas Ultraboost', price: '380000', img: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=600' },
+                        { name: 'Puma RS-X', price: '320000', img: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&q=80&w=600' }
+                    ];
+                }
                 renderProducts();
             });
         }
