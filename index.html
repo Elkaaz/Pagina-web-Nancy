@@ -776,6 +776,106 @@
             transform: scale(1.02);
         }
 
+        .payment-methods {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 10px;
+        }
+
+        .payment-info-box {
+            background: white;
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .payment-info-box small {
+            color: #666;
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .number-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #nequi-number {
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            color: #222;
+        }
+
+        .btn-copy {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .btn-copy:hover {
+            transform: scale(1.05);
+            background: var(--primary-dark);
+        }
+
+        .bank-title {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .grid-bancos {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .bank-link {
+            text-decoration: none;
+            color: #444;
+            font-size: 0.75rem;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bank-link:hover {
+            transform: translateY(-5px);
+        }
+
+        .bank-link img {
+            width: 100%;
+            max-width: 50px;
+            height: 50px;
+            object-fit: contain;
+            display: block;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .bre-b-badge {
+            margin-top: 20px;
+            font-size: 0.7rem;
+            color: #888;
+            background: #eef2ff;
+            padding: 8px;
+            border-radius: 5px;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
+        }
+
         .menu-btn {
             display: none;
             background: none;
@@ -869,7 +969,7 @@
 
     <!-- NAVBAR -->
     <nav class="navbar">
-        <a href="#" class="logo">Nancy's Sneakers</a>
+        <a href="#" class="logo">Nancy's Sandals</a>
         <ul class="nav-links">
             <li><a href="#home">Inicio</a></li>
             <li><a href="#products">Productos</a></li>
@@ -977,13 +1077,13 @@
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-section">
-                <h3>Nancy's Sneakers</h3>
-                <p>Tu destino para zapatillas premium. Calidad, estilo y comodidad en cada paso.</p>
+                <h3>Nancy's Sandals</h3>
+                <p>Tu destino para sandalias premium. Calidad, estilo y comodidad en cada paso.</p>
             </div>
             <div class="footer-section">
                 <h3>Contacto</h3>
                 <p>📞 +57 310 000 0000</p>
-                <p>📧 ventas@nancysneakers.com</p>
+                <p>📧 ventas@nancysandals.com</p>
             </div>
             <div class="footer-section">
                 <h3>Síguenos</h3>
@@ -992,7 +1092,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2024 Nancy's Sneakers. Todos los derechos reservados.</p>
+            <p>&copy; 2024 Nancy's Sandals. Todos los derechos reservados.</p>
             <button class="btn-return" onclick="openReturnModal()">🔄 Solicitar Cambio/Devolución</button>
         </div>
     </footer>
@@ -1082,11 +1182,35 @@
                 
                 <div class="form-group">
                     <label>💳 Método de pago:</label>
-                    <select id="payment-method">
-                        <option value="whatsapp">WhatsApp (pagar al recibir)</option>
-                        <option value="nequi">Nequi</option>
-                        <option value="bancolombia">Bancolombia</option>
-                    </select>
+                    <div class="payment-methods">
+                        <div class="payment-info-box">
+                            <small><i class="fa-solid fa-key"></i> NÚMERO NEQUI / LLAVE BRE-B</small>
+                            <div class="number-display">
+                                <strong id="nequi-number">3134167941</strong>
+                                <button class="btn-copy" onclick="copyValue()" id="btn-text">
+                                    <i class="fa-regular fa-copy"></i> Copiar
+                                </button>
+                            </div>
+                        </div>
+                        <p class="bank-title">Elige donde pagar para abrir la App o Web:</p>
+                        <div class="grid-bancos">
+                            <a href="https://www.nequi.com.co/recargas" target="_blank" class="bank-link">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Nequi_logo.svg/1200px-Nequi_logo.svg.png" alt="Nequi">
+                                <span>Nequi</span>
+                            </a>
+                            <a href="https://www.bancolombia.com/personas" target="_blank" class="bank-link">
+                                <img src="https://logodownload.org/wp-content/uploads/2018/09/bancolombia-logo-0.png" alt="Bancolombia">
+                                <span>Bancolombia</span>
+                            </a>
+                            <a href="https://www.pse.com.co" target="_blank" class="bank-link">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PSE_Logo.png" alt="PSE">
+                                <span>Otros Bancos</span>
+                            </a>
+                        </div>
+                        <div class="bre-b-badge">
+                            <i class="fa-solid fa-bolt"></i> Sistema compatible con transferencias inmediatas Bre-B
+                        </div>
+                    </div>
                 </div>
                 
                 <button class="btn-checkout" onclick="placeOrder()">CONFIRMAR PEDIDO</button>
@@ -1285,6 +1409,23 @@
         function toggleMobileMenu() {
             const menu = document.getElementById('mobile-menu');
             menu.classList.toggle('active');
+        }
+
+        function copyValue() {
+            const numberToCopy = document.getElementById('nequi-number').innerText;
+            const btn = document.getElementById('btn-text');
+
+            navigator.clipboard.writeText(numberToCopy).then(() => {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> ¡Listo!';
+                btn.style.background = "#28a745";
+
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copiar';
+                    btn.style.background = "var(--primary)";
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+            });
         }
 
         function openCheckout() {
