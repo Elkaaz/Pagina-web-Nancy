@@ -369,6 +369,7 @@
         <h1>🔧 PANEL ADMINISTRADOR - Nancy's Sandals</h1>
         <div class="header-buttons">
             <button class="btn-header" onclick="showSection('add-product')">➕ AGREGAR PRODUCTO</button>
+            <button class="btn-header" onclick="showSection('categories')">🏷️ CATEGORÍAS</button>
             <button class="btn-header" onclick="showSection('inventory')">📦 INVENTARIO</button>
             <button class="btn-header" onclick="showSection('orders')">📋 PEDIDOS</button>
             <button class="btn-header" onclick="showSection('customers')">👥 CLIENTES</button>
@@ -403,6 +404,14 @@
                     <span class="help-text">Los puntos se agregan automáticamente</span>
                 </div>
                 
+                <div class="form-group">
+                    <label>¿A qué categoría pertenece?</label>
+                    <select id="product-category" style="padding: 18px; font-size: 1.2rem; background: #0f0f23; border: 3px solid #3a3a5c; border-radius: 12px; color: white; min-height: 55px; cursor: pointer;">
+                        <option value="">Selecciona una categoría...</option>
+                    </select>
+                    <span class="help-text">Si no hay categorías, créalas primero en "Categorías"</span>
+                </div>
+                
                 <div class="form-group" style="grid-column: 1 / -1;">
                     <label>📷 Sube una foto del producto</label>
                     <div class="file-upload-wrapper">
@@ -419,6 +428,48 @@
                 </div>
             </div>
             <button class="btn-add btn-primary" onclick="addProduct()">💾 GUARDAR PRODUCTO EN LA TIENDA</button>
+        </div>
+    </div>
+
+    <!-- SECCIÓN CATEGORÍAS -->
+    <div id="section-categories" style="display: none;">
+        <div class="add-product-section">
+            <h2>🏷️ GESTIONAR CATEGORÍAS</h2>
+            <p style="color: #888; margin-bottom: 25px; font-size: 1.1rem;">Crea las categorías para organizar tus productos (Deportivas, Casual, Elegantes, etc.)</p>
+            
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>¿Cómo se llama esta categoría?</label>
+                    <input type="text" id="category-name" placeholder="Ejemplo: Zapatos Deportivos">
+                    <span class="help-text">Escribe un nombre claro para que los clientes encuentren los productos</span>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>📷 Sube una imagen representativa</label>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="category-image" accept="image/*" onchange="previewCategoryImage(event)">
+                        <label for="category-image" class="file-upload-label">
+                            <span>📷 Elegir imagen de la categoría</span>
+                        </label>
+                    </div>
+                    <div id="category-image-preview" style="margin-top: 15px; max-width: 300px; display: none; border: 3px solid var(--success); border-radius: 15px; overflow: hidden;">
+                        <img id="category-preview-img" style="width: 100%; display: block;">
+                        <div style="background: var(--success); color: white; padding: 10px; text-align: center; font-weight: bold;">✅ Imagen cargada</div>
+                    </div>
+                    <input type="hidden" id="category-image-url">
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Descripción de la categoría (opcional)</label>
+                    <textarea id="category-description" rows="3" placeholder="Ej: Calzado perfecto para hacer ejercicio, correr o entrenar"></textarea>
+                    <span class="help-text">Esta descripción aparecerá debajo del nombre en la tienda</span>
+                </div>
+            </div>
+            
+            <button class="btn-add btn-primary" onclick="addCategory()">💾 CREAR CATEGORÍA</button>
+            
+            <h3 style="color: var(--accent); margin: 40px 0 20px 0;">📋 CATEGORÍAS EXISTENTES</h3>
+            <div id="categories-grid" class="products-grid"></div>
         </div>
     </div>
 
@@ -683,6 +734,7 @@
         async function addProduct() {
             const name = document.getElementById('product-name').value.trim();
             const price = document.getElementById('product-price').value.trim();
+            const categoryId = document.getElementById('product-category').value;
             const imageInput = document.getElementById('product-camera');
             const imageUrlInput = document.getElementById('product-image').value.trim();
 
@@ -713,12 +765,14 @@
                     name,
                     price,
                     img: imageUrl,
+                    categoryId: categoryId || null,
                     id: newProductRef.key
                 });
 
                 showToast('¡Producto guardado correctamente en la tienda!', 'success');
                 document.getElementById('product-name').value = '';
                 document.getElementById('product-price').value = '';
+                document.getElementById('product-category').value = '';
                 document.getElementById('product-image').value = '';
                 document.getElementById('product-camera').value = '';
                 document.getElementById('image-preview').style.display = 'none';
@@ -904,8 +958,198 @@
             }
         }
 
+        // ==================== GESTIÓN DE CATEGORÍAS ====================
+        
+        let categories = [];
+        let categoriesListener = null;
+
+        function previewCategoryImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    document.getElementById('category-preview-img').src = e.target.result;
+                    document.getElementById('category-image-preview').style.display = 'block';
+                    
+                    // Subir a Cloudinary automáticamente
+                    try {
+                        showToast('Subiendo imagen de categoría...', 'info', 2000);
+                        const imageUrl = await uploadToCloudinary(file);
+                        document.getElementById('category-image-url').value = imageUrl;
+                        document.getElementById('category-preview-img').src = imageUrl;
+                        showToast('Imagen de categoría lista', 'success');
+                    } catch (error) {
+                        showToast('Error al subir imagen: ' + error.message, 'error');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function addCategory() {
+            const name = document.getElementById('category-name').value.trim();
+            const description = document.getElementById('category-description').value.trim();
+            const imageUrl = document.getElementById('category-image-url').value.trim();
+
+            if (!name) {
+                showToast('Por favor escribe el nombre de la categoría', 'warning');
+                return;
+            }
+
+            if (!imageUrl) {
+                showToast('Por favor sube una imagen para la categoría', 'warning');
+                return;
+            }
+
+            try {
+                const newCategoryRef = database.ref('categories').push();
+                await newCategoryRef.set({
+                    id: newCategoryRef.key,
+                    name,
+                    description,
+                    image: imageUrl,
+                    createdAt: new Date().toISOString()
+                });
+
+                showToast('¡Categoría "' + name + '" creada correctamente!', 'success');
+                
+                // Limpiar formulario
+                document.getElementById('category-name').value = '';
+                document.getElementById('category-description').value = '';
+                document.getElementById('category-image-url').value = '';
+                document.getElementById('category-image').value = '';
+                document.getElementById('category-image-preview').style.display = 'none';
+            } catch (error) {
+                showToast('Error al crear categoría: ' + error.message, 'error');
+            }
+        }
+
+        function loadCategories() {
+            // Detener listener anterior si existe
+            if (categoriesListener) {
+                database.ref('categories').off('value', categoriesListener);
+            }
+
+            categoriesListener = database.ref('categories').on('value', (snapshot) => {
+                categories = [];
+                snapshot.forEach((childSnapshot) => {
+                    categories.push(childSnapshot.val());
+                });
+                renderCategories();
+            });
+        }
+
+        function renderCategories() {
+            const grid = document.getElementById('categories-grid');
+            
+            if (!grid) return;
+            
+            if (categories.length === 0) {
+                grid.innerHTML = '<div class="empty-message">No hay categorías creadas. Crea la primera arriba.</div>';
+                return;
+            }
+
+            grid.innerHTML = categories.map((category) => `
+                <div class="product-card">
+                    <img src="${category.image}" alt="${category.name}" onerror="this.src='https://via.placeholder.com/300x250?text=Sin+imagen'">
+                    <div class="product-info">
+                        <div class="product-name">${category.name}</div>
+                        <div style="color: #888; font-size: 0.9rem; margin-top: 5px;">${category.description || 'Sin descripción'}</div>
+                        <div class="product-actions">
+                            <button class="btn-edit" onclick="editCategory('${category.id}')">✏️ EDITAR</button>
+                            <button class="btn-delete" onclick="deleteCategory('${category.id}')">🗑️ ELIMINAR</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteCategory(categoryId) {
+            if (confirm('¿Estás segura de que quieres eliminar esta categoría? Los productos asociados quedarán sin categoría.')) {
+                database.ref(`categories/${categoryId}`).remove().then(() => {
+                    showToast('Categoría eliminada', 'success');
+                }).catch((error) => {
+                    showToast('Error al eliminar: ' + error.message, 'error');
+                });
+            }
+        }
+
+        function editCategory(categoryId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+
+            // Llenar formulario
+            document.getElementById('category-name').value = category.name;
+            document.getElementById('category-description').value = category.description || '';
+            document.getElementById('category-image-url').value = category.image;
+            document.getElementById('category-preview-img').src = category.image;
+            document.getElementById('category-image-preview').style.display = 'block';
+
+            // Cambiar botón
+            const btn = document.querySelector('button[onclick="addCategory()"]');
+            btn.textContent = '💾 ACTUALIZAR CATEGORÍA';
+            btn.onclick = () => updateCategory(categoryId);
+
+            showToast('Modifica los datos y presiona "ACTUALIZAR CATEGORÍA"', 'info');
+        }
+
+        // Función para cargar categorías en el selector de productos
+        function loadCategoriesForProductSelect() {
+            database.ref('categories').once('value').then((snapshot) => {
+                const select = document.getElementById('product-category');
+                select.innerHTML = '<option value="">Selecciona una categoría...</option>';
+                
+                snapshot.forEach((childSnapshot) => {
+                    const category = childSnapshot.val();
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        async function updateCategory(categoryId) {
+            const name = document.getElementById('category-name').value.trim();
+            const description = document.getElementById('category-description').value.trim();
+            const imageUrl = document.getElementById('category-image-url').value.trim();
+
+            if (!name) {
+                showToast('Por favor escribe el nombre de la categoría', 'warning');
+                return;
+            }
+
+            if (!imageUrl) {
+                showToast('Por favor sube una imagen para la categoría', 'warning');
+                return;
+            }
+
+            try {
+                await database.ref(`categories/${categoryId}`).update({
+                    name,
+                    description,
+                    image: imageUrl
+                });
+                showToast('¡Categoría actualizada!', 'success');
+            } catch (error) {
+                showToast('Error al actualizar: ' + error.message, 'error');
+            }
+
+            // Limpiar y restaurar
+            document.getElementById('category-name').value = '';
+            document.getElementById('category-description').value = '';
+            document.getElementById('category-image-url').value = '';
+            document.getElementById('category-image').value = '';
+            document.getElementById('category-image-preview').style.display = 'none';
+
+            const btn = document.querySelector('button[onclick^="updateCategory"]');
+            btn.textContent = '💾 CREAR CATEGORÍA';
+            btn.onclick = addCategory;
+        }
+
         function showSection(section) {
             document.getElementById('section-add-product').style.display = section === 'add-product' ? 'block' : 'none';
+            document.getElementById('section-categories').style.display = section === 'categories' ? 'block' : 'none';
             document.getElementById('section-inventory').style.display = section === 'inventory' ? 'block' : 'none';
             document.getElementById('section-design').style.display = section === 'design' ? 'block' : 'none';
             document.getElementById('section-settings').style.display = section === 'settings' ? 'block' : 'none';
@@ -921,6 +1165,8 @@
                 // Detener listener cuando salimos del inventario
                 stopInventoryListener();
             }
+            if (section === 'add-product') loadCategoriesForProductSelect();
+            if (section === 'categories') loadCategories();
             if (section === 'design') loadDesign();
             if (section === 'settings') loadSettings();
             if (section === 'orders') loadOrders();

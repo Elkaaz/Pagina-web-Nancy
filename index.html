@@ -1040,14 +1040,21 @@
         </div>
     </section>
 
-    <!-- PRODUCTS -->
-    <section class="products" id="productos">
+    <!-- CATEGORÍAS -->
+    <section class="categories-section" id="categorias" style="padding: 60px 5%; background: var(--bg-light);">
         <div class="section-title">
-            <h2>Colección Exclusiva</h2>
-            <p>Nuestros modelos más vendidos</p>
+            <h2>Nuestras Categorías</h2>
+            <p>Encuentra el estilo perfecto para cada ocasión</p>
         </div>
-        <div class="product-grid" id="catalog"></div>
+        <div class="categories-grid" id="categories-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; max-width: 1200px; margin: 0 auto;">
+            <!-- Las categorías se cargan dinámicamente -->
+        </div>
     </section>
+
+    <!-- PRODUCTS POR CATEGORÍA -->
+    <div id="products-by-category">
+        <!-- Los productos se organizan por categoría dinámicamente -->
+    </div>
 
     <!-- TESTIMONIALS -->
     <section class="testimonials" id="testimonios">
@@ -1327,51 +1334,193 @@
             });
         }
 
-        function loadProducts() {
-            database.ref('products').on('value', (snapshot) => {
-                products = [];
+        // Variables para categorías y productos
+        let categories = [];
+        let productsByCategory = {};
+
+        // Cargar categorías desde Firebase
+        function loadCategories() {
+            database.ref('categories').on('value', (snapshot) => {
+                categories = [];
                 snapshot.forEach((childSnapshot) => {
-                    products.push(childSnapshot.val());
+                    categories.push(childSnapshot.val());
                 });
-                if (products.length === 0) {
-                    // Fallback a productos por defecto
-                    products = [
-                        { name: 'Nike Air Max 270', price: '450000', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600' },
-                        { name: 'Adidas Ultraboost', price: '380000', img: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=600' },
-                        { name: 'Puma RS-X', price: '320000', img: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&q=80&w=600' }
-                    ];
-                }
-                render();
+                renderCategories();
+                // Después de cargar categorías, cargar productos
+                loadProductsByCategory();
             });
         }
 
-        // --- RENDERIZADO ---
-        function render() {
-            const catalog = document.getElementById('catalog');
-            catalog.innerHTML = '';
-            
-            if (products.length === 0) {
-                catalog.innerHTML = '<p style="text-align: center; color: #666; font-size: 1.2rem; padding: 40px; grid-column: 1/-1;">No hay productos disponibles en este momento.</p>';
+        // Renderizar cards de categorías
+        function renderCategories() {
+            const container = document.getElementById('categories-container');
+            if (!container) return;
+
+            if (categories.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; font-size: 1.2rem; grid-column: 1/-1;">Próximamente nuevas categorías...</p>';
                 return;
             }
-            
-            products.forEach((p, i) => {
-                catalog.innerHTML += `
-                    <div class="product-card">
-                        <div class="product-image">
-                            <span class="product-badge">Nuevo</span>
-                            <img src="${p.img}" loading="lazy" alt="${p.name}" onerror="this.src='https://via.placeholder.com/400x320?text=Sin+imagen'">
-                        </div>
-                        <div class="product-info">
-                            <h3 class="product-name">${p.name}</h3>
-                            <p class="product-price">$${p.price}</p>
-                            <button class="btn-add-cart" onclick="addToCart(${i})">
-                                <i class="fas fa-shopping-bag"></i> Agregar al Carrito
-                            </button>
-                        </div>
+
+            container.innerHTML = categories.map(cat => `
+                <div class="category-card" onclick="scrollToCategory('${cat.id}')" style="
+                    position: relative;
+                    border-radius: 20px;
+                    overflow: hidden;
+                    cursor: pointer;
+                    height: 200px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+                    transition: transform 0.3s;
+                " onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <img src="${cat.image}" alt="${cat.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div class="category-overlay" style="
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+                        padding: 30px 20px 20px;
+                        color: white;
+                    ">
+                        <h3 style="font-size: 1.5rem; margin-bottom: 5px;">${cat.name}</h3>
+                        <p style="font-size: 0.9rem; opacity: 0.9;">${cat.description || 'Ver productos'}</p>
                     </div>
+                </div>
+            `).join('');
+        }
+
+        // Scroll a sección de categoría
+        function scrollToCategory(categoryId) {
+            const element = document.getElementById(`category-section-${categoryId}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Cargar productos organizados por categoría
+        function loadProductsByCategory() {
+            database.ref('products').on('value', (snapshot) => {
+                const allProducts = [];
+                snapshot.forEach((childSnapshot) => {
+                    allProducts.push(childSnapshot.val());
+                });
+
+                // Organizar productos por categoría
+                productsByCategory = {};
+                
+                // Inicializar categorías
+                categories.forEach(cat => {
+                    productsByCategory[cat.id] = {
+                        category: cat,
+                        products: []
+                    };
+                });
+
+                // Productos sin categoría
+                productsByCategory['uncategorized'] = {
+                    category: { id: 'uncategorized', name: 'Otros Productos', description: '', image: '' },
+                    products: []
+                };
+
+                // Distribuir productos
+                allProducts.forEach(product => {
+                    if (product.categoryId && productsByCategory[product.categoryId]) {
+                        productsByCategory[product.categoryId].products.push(product);
+                    } else {
+                        productsByCategory['uncategorized'].products.push(product);
+                    }
+                });
+
+                // Guardar todos los productos para el carrito
+                products = allProducts;
+
+                renderProductsByCategory();
+            });
+        }
+
+        // Renderizar productos organizados por categoría
+        function renderProductsByCategory() {
+            const container = document.getElementById('products-by-category');
+            if (!container) return;
+
+            let html = '';
+
+            Object.keys(productsByCategory).forEach(catId => {
+                const { category, products: catProducts } = productsByCategory[catId];
+                
+                if (catProducts.length === 0 && catId !== 'uncategorized') return;
+                if (catId === 'uncategorized' && catProducts.length === 0) return;
+
+                html += `
+                    <section class="products" id="category-section-${catId}" style="padding: 60px 5%;">
+                        <div class="section-title">
+                            <h2>${category.name}</h2>
+                            ${category.description ? `<p>${category.description}</p>` : ''}
+                        </div>
+                        <div class="product-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto;">
+                            ${catProducts.map((p, i) => `
+                                <div class="product-card">
+                                    <div class="product-image" style="position: relative; overflow: hidden; border-radius: 15px;">
+                                        <span class="product-badge" style="position: absolute; top: 10px; left: 10px; background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; z-index: 2;">Nuevo</span>
+                                        <img src="${p.img}" loading="lazy" alt="${p.name}" onerror="this.src='https://via.placeholder.com/400x320?text=Sin+imagen'" style="width: 100%; height: 280px; object-fit: cover; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                    </div>
+                                    <div class="product-info" style="padding: 20px;">
+                                        <h3 class="product-name" style="font-size: 1.1rem; margin-bottom: 10px; color: var(--text-dark);">${p.name}</h3>
+                                        <p class="product-price" style="font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-bottom: 15px;">$${parseInt(p.price).toLocaleString('es-CO')}</p>
+                                        <button class="btn-add-cart" onclick="addToCartById('${p.id}')" style="
+                                            width: 100%;
+                                            padding: 15px;
+                                            background: linear-gradient(135deg, var(--primary), var(--secondary));
+                                            color: white;
+                                            border: none;
+                                            border-radius: 10px;
+                                            font-size: 1rem;
+                                            cursor: pointer;
+                                            transition: 0.3s;
+                                        ">
+                                            <i class="fas fa-shopping-bag"></i> Agregar al Carrito
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </section>
                 `;
             });
+
+            container.innerHTML = html;
+        }
+
+        // Agregar al carrito por ID
+        function addToCartById(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            const talla = prompt("¿Qué talla necesitas? (Ej: 36, 37, 38, 39, 40)");
+            if (talla && talla.trim() !== '') {
+                cart.push({...product, talla: talla.trim()});
+                updateCartUI();
+                toggleCart();
+            }
+        }
+
+        // Funciones legacy para compatibilidad
+        function loadProducts() {
+            // Esta función ahora es manejada por loadProductsByCategory
+        }
+
+        function render() {
+            // Esta función ahora es manejada por renderProductsByCategory
+        }
+
+        function addToCart(index) {
+            if (products[index]) {
+                const talla = prompt("¿Qué talla necesitas? (Ej: 36, 37, 38, 39, 40)");
+                if (talla && talla.trim() !== '') {
+                    cart.push({...products[index], talla: talla.trim()});
+                    updateCartUI();
+                    toggleCart();
+                }
+            }
         }
 
         // --- CARRITO ---
@@ -1684,7 +1833,7 @@
 
         // Inicializar
         loadDesign();
-        loadProducts();
+        loadCategories();
     </script>
 </body>
 </html>
