@@ -402,13 +402,17 @@
         let products = [];
 
         function loadProducts() {
+            console.log('Iniciando carga de productos...');
             database.ref('products').on('value', (snapshot) => {
+                console.log('Snapshot recibido:', snapshot.val());
                 products = [];
                 snapshot.forEach((childSnapshot) => {
                     products.push(childSnapshot.val());
                 });
                 console.log('Productos cargados en admin:', products);
                 renderProducts();
+            }, (error) => {
+                console.error('Error al cargar productos:', error);
             });
         }
 
