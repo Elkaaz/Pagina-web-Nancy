@@ -451,9 +451,9 @@
             let imageUrl = imageUrlInput;
             if (imageInput.files && imageInput.files.length > 0) {
                 try {
-                    imageUrl = await uploadImageToSupabase(imageInput.files[0]);
+                    imageUrl = await convertImageToBase64(imageInput.files[0]);
                 } catch (error) {
-                    alert('❌ No pude subir la foto. Intenta de nuevo.');
+                    alert('❌ No pude procesar la foto. Intenta de nuevo.');
                     return;
                 }
             }
