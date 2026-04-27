@@ -405,9 +405,15 @@
         }
 
         let products = [];
+        let productsListener = null;
 
         function loadProducts() {
-            database.ref('products').on('value', (snapshot) => {
+            // Remover listener anterior si existe
+            if (productsListener) {
+                database.ref('products').off('value', productsListener);
+            }
+            
+            productsListener = database.ref('products').on('value', (snapshot) => {
                 products = [];
                 snapshot.forEach((childSnapshot) => {
                     products.push(childSnapshot.val());
@@ -645,7 +651,9 @@
             document.getElementById('section-customers').style.display = section === 'customers' ? 'block' : 'none';
             document.getElementById('section-dashboard').style.display = section === 'dashboard' ? 'block' : 'none';
             
-            if (section === 'inventory') loadProducts();
+            if (section === 'inventory') {
+                loadProducts();
+            }
             if (section === 'settings') loadSettings();
             if (section === 'orders') loadOrders();
             if (section === 'returns') loadReturns();
