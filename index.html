@@ -1269,22 +1269,42 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script>
-        let products = JSON.parse(localStorage.getItem('products')) || [];
+        // --- CONFIGURACIÓN FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDEACln-HBhCYkLViFXohwTWx9PQTL-CjI",
+            authDomain: "sandalias-nancy.firebaseapp.com",
+            projectId: "sandalias-nancy",
+            storageBucket: "sandalias-nancy.firebasestorage.app",
+            messagingSenderId: "448671997169",
+            appId: "1:448671997169:web:5b4b2521c8180ede9f5d50",
+            measurementId: "G-33PC9L428C"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let products = [];
         let cart = [];
         let settings = {};
 
         function loadProducts() {
-            products = JSON.parse(localStorage.getItem('products')) || [];
-            if (products.length === 0) {
-                // Fallback a productos por defecto
-                products = [
-                    { name: 'Nike Air Max 270', price: '450000', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600' },
-                    { name: 'Adidas Ultraboost', price: '380000', img: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=600' },
-                    { name: 'Puma RS-X', price: '320000', img: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&q=80&w=600' }
-                ];
-            }
-            renderProducts();
+            database.ref('products').on('value', (snapshot) => {
+                products = [];
+                snapshot.forEach((childSnapshot) => {
+                    products.push(childSnapshot.val());
+                });
+                if (products.length === 0) {
+                    // Fallback a productos por defecto
+                    products = [
+                        { name: 'Nike Air Max 270', price: '450000', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600' },
+                        { name: 'Adidas Ultraboost', price: '380000', img: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&q=80&w=600' },
+                        { name: 'Puma RS-X', price: '320000', img: 'https://images.unsplash.com/photo-1605348532760-6753d2c43329?auto=format&fit=crop&q=80&w=600' }
+                    ];
+                }
+                renderProducts();
+            });
         }
 
         // --- RENDERIZADO ---
@@ -1453,6 +1473,11 @@
             document.getElementById('checkout-total').textContent = `$${total.toLocaleString('es-CO')}`;
         }
 
+        // Cargar configuración desde Firebase
+        database.ref('settings').on('value', (snapshot) => {
+            settings = snapshot.val() || {};
+        });
+
         async function placeOrder() {
             const name = document.getElementById('customer-name').value.trim();
             const phone = document.getElementById('customer-phone').value.trim();
@@ -1491,8 +1516,8 @@
             const shippingCost = cityRates[city][shippingCompany] || 15000;
             const total = subtotal + shippingCost;
 
-            const orders = JSON.parse(localStorage.getItem('orders')) || [];
-            orders.push({
+            const newOrderRef = database.ref('orders').push();
+            await newOrderRef.set({
                 customer_name: name,
                 customer_phone: phone,
                 customer_address: address,
@@ -1501,9 +1526,9 @@
                 total: total,
                 shipping_company: shippingCompany,
                 created_at: new Date().toISOString(),
-                status: 'pending'
+                status: 'pending',
+                id: newOrderRef.key
             });
-            localStorage.setItem('orders', JSON.stringify(orders));
 
             alert('✅ ¡Pedido realizado con éxito! Te contactaremos por WhatsApp para confirmar.');
             closeCheckout();
@@ -1556,8 +1581,8 @@
                 }
             }
 
-            const returns = JSON.parse(localStorage.getItem('returns')) || [];
-            returns.push({
+            const newReturnRef = database.ref('returns').push();
+            await newReturnRef.set({
                 order_id: orderId || null,
                 customer_name: name,
                 customer_phone: phone,
@@ -1566,9 +1591,9 @@
                 reason: reason,
                 return_type: returnType,
                 status: 'pending',
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                id: newReturnRef.key
             });
-            localStorage.setItem('returns', JSON.stringify(returns));
 
             alert('✅ Solicitud de cambio/devolución enviada exitosamente. Te contactaremos pronto.');
             closeReturnModal();

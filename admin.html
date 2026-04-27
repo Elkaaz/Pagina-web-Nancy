@@ -378,17 +378,37 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script>
+        // --- CONFIGURACIÓN FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDEACln-HBhCYkLViFXohwTWx9PQTL-CjI",
+            authDomain: "sandalias-nancy.firebaseapp.com",
+            projectId: "sandalias-nancy",
+            storageBucket: "sandalias-nancy.firebasestorage.app",
+            messagingSenderId: "448671997169",
+            appId: "1:448671997169:web:5b4b2521c8180ede9f5d50",
+            measurementId: "G-33PC9L428C"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         // Verificar autenticación
         if (localStorage.getItem('admin_logged_in') !== 'true') {
             window.location.href = 'login.html';
         }
 
-        let products = JSON.parse(localStorage.getItem('products')) || [];
+        let products = [];
 
         function loadProducts() {
-            products = JSON.parse(localStorage.getItem('products')) || [];
-            renderProducts();
+            database.ref('products').on('value', (snapshot) => {
+                products = [];
+                snapshot.forEach((childSnapshot) => {
+                    products.push(childSnapshot.val());
+                });
+                renderProducts();
+            });
         }
 
         function renderProducts() {
@@ -446,9 +466,14 @@
                 return;
             }
 
-            products.push({ name, price, img: imageUrl });
-            localStorage.setItem('products', JSON.stringify(products));
-            renderProducts();
+            const newProductRef = database.ref('products').push();
+            await newProductRef.set({
+                name,
+                price,
+                img: imageUrl,
+                id: newProductRef.key
+            });
+
             alert('✅ ¡Producto guardado correctamente en la tienda!');
             document.getElementById('product-name').value = '';
             document.getElementById('product-price').value = '';
@@ -497,9 +522,8 @@
 
         function deleteProduct(index) {
             if (confirm('¿Estás segura de que quieres borrar este producto? Esta acción no se puede deshacer.')) {
-                products.splice(index, 1);
-                localStorage.setItem('products', JSON.stringify(products));
-                renderProducts();
+                const product = products[index];
+                database.ref(`products/${product.id}`).remove();
                 alert('✅ Producto borrado de la tienda');
             }
         }
@@ -511,9 +535,11 @@
             const newImage = prompt('Nueva URL de la imagen:', product.img);
 
             if (newName && newPrice && newImage) {
-                products[index] = { name: newName, price: newPrice, img: newImage };
-                localStorage.setItem('products', JSON.stringify(products));
-                renderProducts();
+                database.ref(`products/${product.id}`).update({
+                    name: newName,
+                    price: newPrice,
+                    img: newImage
+                });
                 alert('✅ Producto actualizado correctamente');
             }
         }
@@ -555,15 +581,17 @@
         }
 
         function loadSettings() {
-            const settings = JSON.parse(localStorage.getItem('settings')) || {};
-            document.getElementById('setting-phone').value = settings.phone || '';
-            document.getElementById('setting-whatsapp').value = settings.whatsapp || '';
-            document.getElementById('setting-instagram').value = settings.instagram || '';
-            document.getElementById('setting-facebook').value = settings.facebook || '';
-            document.getElementById('setting-email').value = settings.email || '';
-            document.getElementById('setting-address').value = settings.address || '';
-            document.getElementById('setting-welcome').value = settings.welcome_text || '';
-            document.getElementById('setting-shipping').value = settings.shipping_base || '';
+            database.ref('settings').on('value', (snapshot) => {
+                const settings = snapshot.val() || {};
+                document.getElementById('setting-phone').value = settings.phone || '';
+                document.getElementById('setting-whatsapp').value = settings.whatsapp || '';
+                document.getElementById('setting-instagram').value = settings.instagram || '';
+                document.getElementById('setting-facebook').value = settings.facebook || '';
+                document.getElementById('setting-email').value = settings.email || '';
+                document.getElementById('setting-address').value = settings.address || '';
+                document.getElementById('setting-welcome').value = settings.welcome_text || '';
+                document.getElementById('setting-shipping').value = settings.shipping_base || '';
+            });
         }
 
         function saveSettings() {
@@ -577,99 +605,103 @@
                 welcome_text: document.getElementById('setting-welcome').value,
                 shipping_base: document.getElementById('setting-shipping').value
             };
-            localStorage.setItem('settings', JSON.stringify(settings));
+            database.ref('settings').set(settings);
             alert('✅ ¡Configuración guardada correctamente!');
         }
 
         function loadOrders() {
-            const orders = JSON.parse(localStorage.getItem('orders')) || [];
-            
-            const grid = document.getElementById('orders-grid');
-            if (orders.length === 0) {
-                grid.innerHTML = '<div class="empty-message">No hay pedidos aún.</div>';
-                return;
-            }
+            database.ref('orders').on('value', (snapshot) => {
+                const orders = [];
+                snapshot.forEach((childSnapshot) => {
+                    orders.push(childSnapshot.val());
+                });
+                
+                const grid = document.getElementById('orders-grid');
+                if (orders.length === 0) {
+                    grid.innerHTML = '<div class="empty-message">No hay pedidos aún.</div>';
+                    return;
+                }
 
-            grid.innerHTML = orders.map((order, index) => `
-                <div class="product-card" style="padding: 20px;">
-                    <div class="product-name">Pedido #${index + 1}</div>
-                    <div style="margin: 10px 0; color: #888;">${new Date(order.created_at).toLocaleString()}</div>
-                    <div style="margin: 5px 0;"><strong>Cliente:</strong> ${order.customer_name}</div>
-                    <div style="margin: 5px 0;"><strong>Teléfono:</strong> ${order.customer_phone}</div>
-                    <div style="margin: 5px 0;"><strong>Dirección:</strong> ${order.customer_address}, ${order.customer_city}</div>
-                    <div style="margin: 5px 0;"><strong>Total:</strong> $${parseInt(order.total).toLocaleString('es-CO')}</div>
-                    <div style="margin: 5px 0;"><strong>Estado:</strong> ${order.status}</div>
-                    <div style="margin: 15px 0;">
-                        <strong>� Productos:</strong>
-                        ${order.products.map(p => `
-                            <div style="display: flex; align-items: center; margin-top: 10px;">
-                                <img src="${p.img}" alt="${p.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; margin-right: 10px;" onerror="this.src='https://via.placeholder.com/50x50?text=Sin+imagen'">
-                                <div>
-                                    <div style="font-weight: bold;">${p.name}</div>
-                                    <div style="font-size: 0.9rem;">Talla: ${p.talla}</div>
+                grid.innerHTML = orders.map((order, index) => `
+                    <div class="product-card" style="padding: 20px;">
+                        <div class="product-name">Pedido #${index + 1}</div>
+                        <div style="margin: 10px 0; color: #888;">${new Date(order.created_at).toLocaleString()}</div>
+                        <div style="margin: 5px 0;"><strong>Cliente:</strong> ${order.customer_name}</div>
+                        <div style="margin: 5px 0;"><strong>Teléfono:</strong> ${order.customer_phone}</div>
+                        <div style="margin: 5px 0;"><strong>Dirección:</strong> ${order.customer_address}, ${order.customer_city}</div>
+                        <div style="margin: 5px 0;"><strong>Total:</strong> $${parseInt(order.total).toLocaleString('es-CO')}</div>
+                        <div style="margin: 5px 0;"><strong>Estado:</strong> ${order.status}</div>
+                        <div style="margin: 15px 0;">
+                            <strong>👟 Productos:</strong>
+                            ${order.products.map(p => `
+                                <div style="display: flex; align-items: center; margin-top: 10px;">
+                                    <img src="${p.img}" alt="${p.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; margin-right: 10px;" onerror="this.src='https://via.placeholder.com/50x50?text=Sin+imagen'">
+                                    <div>
+                                        <div style="font-weight: bold;">${p.name}</div>
+                                        <div style="font-size: 0.9rem;">Talla: ${p.talla}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        `).join('')}
+                            `).join('')}
+                        </div>
+                        <div class="product-actions" style="margin-top: 15px;">
+                            <button class="btn-edit" onclick="updateOrderStatus('${order.id}', 'pending')">⏳ Pendiente</button>
+                            <button class="btn-edit" onclick="updateOrderStatus('${order.id}', 'shipped')">📦 Enviado</button>
+                            <button class="btn-edit" onclick="updateOrderStatus('${order.id}', 'delivered')">✅ Entregado</button>
+                        </div>
                     </div>
-                    <div class="product-actions" style="margin-top: 15px;">
-                        <button class="btn-edit" onclick="updateOrderStatus(${index}, 'pending')">⏳ Pendiente</button>
-                        <button class="btn-edit" onclick="updateOrderStatus(${index}, 'shipped')">📦 Enviado</button>
-                        <button class="btn-edit" onclick="updateOrderStatus(${index}, 'delivered')">✅ Entregado</button>
-                    </div>
-                </div>
-            `).join('');
+                `).join('');
+            });
         }
 
-        function updateOrderStatus(index, status) {
-            const orders = JSON.parse(localStorage.getItem('orders')) || [];
-            orders[index].status = status;
-            localStorage.setItem('orders', JSON.stringify(orders));
-            loadOrders();
+        function updateOrderStatus(orderId, status) {
+            database.ref(`orders/${orderId}`).update({ status });
             alert('✅ Estado del pedido actualizado');
         }
 
         function loadReturns() {
-            const returns = JSON.parse(localStorage.getItem('returns')) || [];
-            
-            const grid = document.getElementById('returns-grid');
-            if (returns.length === 0) {
-                grid.innerHTML = '<div class="empty-message">No hay solicitudes de cambio/devolución aún.</div>';
-                return;
-            }
+            database.ref('returns').on('value', (snapshot) => {
+                const returns = [];
+                snapshot.forEach((childSnapshot) => {
+                    returns.push(childSnapshot.val());
+                });
+                
+                const grid = document.getElementById('returns-grid');
+                if (returns.length === 0) {
+                    grid.innerHTML = '<div class="empty-message">No hay solicitudes de cambio/devolución aún.</div>';
+                    return;
+                }
 
-            grid.innerHTML = returns.map((ret, index) => `
-                <div class="product-card" style="padding: 20px;">
-                    <div class="product-name">Solicitud #${index + 1}</div>
-                    <div style="margin: 10px 0; color: #888;">${new Date(ret.created_at).toLocaleString()}</div>
-                    <div style="margin: 5px 0;"><strong>Cliente:</strong> ${ret.customer_name}</div>
-                    <div style="margin: 5px 0;"><strong>Teléfono:</strong> ${ret.customer_phone}</div>
-                    <div style="margin: 5px 0;"><strong>Orden #:</strong> ${ret.order_id || 'N/A'}</div>
-                    <div style="margin: 15px 0;">
-                        <strong>👟 Producto:</strong>
-                        <div style="display: flex; align-items: center; margin-top: 10px;">
-                            <img src="${ret.product_image}" alt="${ret.product_name}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" onerror="this.src='https://via.placeholder.com/80x80?text=Sin+imagen'">
-                            <div>
-                                <div style="font-weight: bold;">${ret.product_name}</div>
+                grid.innerHTML = returns.map((ret, index) => `
+                    <div class="product-card" style="padding: 20px;">
+                        <div class="product-name">Solicitud #${index + 1}</div>
+                        <div style="margin: 10px 0; color: #888;">${new Date(ret.created_at).toLocaleString()}</div>
+                        <div style="margin: 5px 0;"><strong>Cliente:</strong> ${ret.customer_name}</div>
+                        <div style="margin: 5px 0;"><strong>Teléfono:</strong> ${ret.customer_phone}</div>
+                        <div style="margin: 5px 0;"><strong>Orden #:</strong> ${ret.order_id || 'N/A'}</div>
+                        <div style="margin: 15px 0;">
+                            <strong>👟 Producto:</strong>
+                            <div style="display: flex; align-items: center; margin-top: 10px;">
+                                <img src="${ret.product_image}" alt="${ret.product_name}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" onerror="this.src='https://via.placeholder.com/80x80?text=Sin+imagen'">
+                                <div>
+                                    <div style="font-weight: bold;">${ret.product_name}</div>
+                                </div>
                             </div>
                         </div>
+                        <div style="margin: 5px 0;"><strong>Tipo:</strong> ${ret.return_type === 'change' ? '🔄 Cambio' : '💰 Devolución'}</div>
+                        <div style="margin: 5px 0;"><strong>Motivo:</strong> ${ret.reason}</div>
+                        <div style="margin: 5px 0;"><strong>Estado:</strong> ${ret.status}</div>
+                        <div class="product-actions" style="margin-top: 15px;">
+                            <button class="btn-edit" onclick="updateReturnStatus('${ret.id}', 'approved')">✅ Aprobar</button>
+                            <button class="btn-edit" onclick="updateReturnStatus('${ret.id}', 'completed')">📦 Completado</button>
+                            <button class="btn-delete" onclick="updateReturnStatus('${ret.id}', 'rejected')">❌ Rechazar</button>
+                        </div>
                     </div>
-                    <div style="margin: 5px 0;"><strong>Tipo:</strong> ${ret.return_type === 'change' ? '🔄 Cambio' : '💰 Devolución'}</div>
-                    <div style="margin: 5px 0;"><strong>Motivo:</strong> ${ret.reason}</div>
-                    <div style="margin: 5px 0;"><strong>Estado:</strong> ${ret.status}</div>
-                    <div class="product-actions" style="margin-top: 15px;">
-                        <button class="btn-edit" onclick="updateReturnStatus(${index}, 'approved')">✅ Aprobar</button>
-                        <button class="btn-edit" onclick="updateReturnStatus(${index}, 'completed')">📦 Completado</button>
-                        <button class="btn-delete" onclick="updateReturnStatus(${index}, 'rejected')">❌ Rechazar</button>
-                    </div>
-                </div>
-            `).join('');
+                `).join('');
+            });
         }
 
-        function updateReturnStatus(index, status) {
-            const returns = JSON.parse(localStorage.getItem('returns')) || [];
-            returns[index].status = status;
-            localStorage.setItem('returns', JSON.stringify(returns));
-            loadReturns();
+        function updateReturnStatus(returnId, status) {
+            database.ref(`returns/${returnId}`).update({ status });
             alert('✅ Estado de la solicitud actualizado');
         }
 
@@ -682,49 +714,54 @@
         }
 
         function loadCustomers() {
-            const orders = JSON.parse(localStorage.getItem('orders')) || [];
-            
-            // Extraer clientes únicos
-            const customersMap = new Map();
-            orders.forEach(order => {
-                if (!customersMap.has(order.customer_phone)) {
-                    customersMap.set(order.customer_phone, {
-                        name: order.customer_name,
-                        phone: order.customer_phone,
-                        address: order.customer_address,
-                        city: order.customer_city,
-                        lastOrder: order.created_at,
-                        totalSpent: parseInt(order.total),
-                        orderCount: 1
-                    });
-                } else {
-                    const customer = customersMap.get(order.customer_phone);
-                    customer.totalSpent += parseInt(order.total);
-                    customer.orderCount += 1;
+            database.ref('orders').on('value', (snapshot) => {
+                const orders = [];
+                snapshot.forEach((childSnapshot) => {
+                    orders.push(childSnapshot.val());
+                });
+                
+                // Extraer clientes únicos
+                const customersMap = new Map();
+                orders.forEach(order => {
+                    if (!customersMap.has(order.customer_phone)) {
+                        customersMap.set(order.customer_phone, {
+                            name: order.customer_name,
+                            phone: order.customer_phone,
+                            address: order.customer_address,
+                            city: order.customer_city,
+                            lastOrder: order.created_at,
+                            totalSpent: parseInt(order.total),
+                            orderCount: 1
+                        });
+                    } else {
+                        const customer = customersMap.get(order.customer_phone);
+                        customer.totalSpent += parseInt(order.total);
+                        customer.orderCount += 1;
+                    }
+                });
+
+                const customers = Array.from(customersMap.values());
+                const grid = document.getElementById('customers-grid');
+                
+                if (customers.length === 0) {
+                    grid.innerHTML = '<div class="empty-message">No hay clientes aún.</div>';
+                    return;
                 }
+
+                grid.innerHTML = customers.map(customer => `
+                    <div class="product-card" style="padding: 20px;">
+                        <div class="product-name">${customer.name}</div>
+                        <div style="margin: 5px 0;">📞 ${customer.phone}</div>
+                        <div style="margin: 5px 0;">📍 ${customer.address}, ${customer.city}</div>
+                        <div style="margin: 5px 0;">💰 Total gastado: $${customer.totalSpent.toLocaleString('es-CO')}</div>
+                        <div style="margin: 5px 0;">📦 Pedidos: ${customer.orderCount}</div>
+                        <div style="margin: 5px 0; color: #888;">Último pedido: ${new Date(customer.lastOrder).toLocaleDateString()}</div>
+                        <button class="btn-edit" onclick="contactWhatsApp('${customer.phone}')" style="margin-top: 15px; width: 100%;">
+                            📱 Contactar por WhatsApp
+                        </button>
+                    </div>
+                `).join('');
             });
-
-            const customers = Array.from(customersMap.values());
-            const grid = document.getElementById('customers-grid');
-            
-            if (customers.length === 0) {
-                grid.innerHTML = '<div class="empty-message">No hay clientes aún.</div>';
-                return;
-            }
-
-            grid.innerHTML = customers.map(customer => `
-                <div class="product-card" style="padding: 20px;">
-                    <div class="product-name">${customer.name}</div>
-                    <div style="margin: 5px 0;">📞 ${customer.phone}</div>
-                    <div style="margin: 5px 0;">📍 ${customer.address}, ${customer.city}</div>
-                    <div style="margin: 5px 0;">💰 Total gastado: $${customer.totalSpent.toLocaleString('es-CO')}</div>
-                    <div style="margin: 5px 0;">📦 Pedidos: ${customer.orderCount}</div>
-                    <div style="margin: 5px 0; color: #888;">Último pedido: ${new Date(customer.lastOrder).toLocaleDateString()}</div>
-                    <button class="btn-edit" onclick="contactWhatsApp('${customer.phone}')" style="margin-top: 15px; width: 100%;">
-                        📱 Contactar por WhatsApp
-                    </button>
-                </div>
-            `).join('');
         }
 
         function contactWhatsApp(phone) {
@@ -733,65 +770,71 @@
         }
 
         function loadDashboard() {
-            const orders = JSON.parse(localStorage.getItem('orders')) || [];
-            const allProducts = products;
-
-            // Calcular métricas
-            const today = new Date().toDateString();
-            const todayOrders = orders.filter(o => new Date(o.created_at).toDateString() === today);
-            const todaySales = todayOrders.reduce((sum, o) => sum + parseInt(o.total), 0);
-            const totalStock = allProducts.length;
-            const uniqueCustomers = new Set(orders.map(o => o.customer_phone)).size;
-
-            // Productos más vendidos
-            const productSales = {};
-            orders.forEach(order => {
-                order.products.forEach(p => {
-                    productSales[p.name] = (productSales[p.name] || 0) + 1;
+            database.ref('orders').on('value', (ordersSnapshot) => {
+                const orders = [];
+                ordersSnapshot.forEach((childSnapshot) => {
+                    orders.push(childSnapshot.val());
                 });
+                
+                const allProducts = products;
+
+                // Calcular métricas
+                const today = new Date().toDateString();
+                const todayOrders = orders.filter(o => new Date(o.created_at).toDateString() === today);
+                const todaySales = todayOrders.reduce((sum, o) => sum + parseInt(o.total), 0);
+                const totalStock = allProducts.length;
+                const uniqueCustomers = new Set(orders.map(o => o.customer_phone)).size;
+
+                // Productos más vendidos
+                const productSales = {};
+                orders.forEach(order => {
+                    order.products.forEach(p => {
+                        productSales[p.name] = (productSales[p.name] || 0) + 1;
+                    });
+                });
+
+                const topProducts = Object.entries(productSales)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+
+                const dashboard = document.getElementById('dashboard-content');
+                dashboard.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                        <div class="product-card" style="padding: 20px; text-align: center;">
+                            <div style="font-size: 2rem;">💰</div>
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">$${todaySales.toLocaleString('es-CO')}</div>
+                            <div style="color: #666;">Ventas hoy</div>
+                        </div>
+                        <div class="product-card" style="padding: 20px; text-align: center;">
+                            <div style="font-size: 2rem;">📦</div>
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">${todayOrders.length}</div>
+                            <div style="color: #666;">Pedidos hoy</div>
+                        </div>
+                        <div class="product-card" style="padding: 20px; text-align: center;">
+                            <div style="font-size: 2rem;">👟</div>
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">${totalStock}</div>
+                            <div style="color: #666;">Stock disponible</div>
+                        </div>
+                        <div class="product-card" style="padding: 20px; text-align: center;">
+                            <div style="font-size: 2rem;">👥</div>
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">${uniqueCustomers}</div>
+                            <div style="color: #666;">Clientes únicos</div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-bottom: 15px;">👟 Productos más vendidos</h3>
+                    ${topProducts.length > 0 ? `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            ${topProducts.map(([name, count]) => `
+                                <div class="product-card" style="padding: 15px;">
+                                    <div style="font-weight: bold;">${name}</div>
+                                    <div style="color: #666;">${count} vendidos</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '<p style="color: #666;">No hay ventas aún.</p>'}
+                `;
             });
-
-            const topProducts = Object.entries(productSales)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5);
-
-            const dashboard = document.getElementById('dashboard-content');
-            dashboard.innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                    <div class="product-card" style="padding: 20px; text-align: center;">
-                        <div style="font-size: 2rem;">💰</div>
-                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">$${todaySales.toLocaleString('es-CO')}</div>
-                        <div style="color: #666;">Ventas hoy</div>
-                    </div>
-                    <div class="product-card" style="padding: 20px; text-align: center;">
-                        <div style="font-size: 2rem;">📦</div>
-                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">${todayOrders.length}</div>
-                        <div style="color: #666;">Pedidos hoy</div>
-                    </div>
-                    <div class="product-card" style="padding: 20px; text-align: center;">
-                        <div style="font-size: 2rem;">👟</div>
-                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">${totalStock}</div>
-                        <div style="color: #666;">Stock disponible</div>
-                    </div>
-                    <div class="product-card" style="padding: 20px; text-align: center;">
-                        <div style="font-size: 2rem;">👥</div>
-                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">${uniqueCustomers}</div>
-                        <div style="color: #666;">Clientes únicos</div>
-                    </div>
-                </div>
-
-                <h3 style="margin-bottom: 15px;">👟 Productos más vendidos</h3>
-                ${topProducts.length > 0 ? `
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        ${topProducts.map(([name, count]) => `
-                            <div class="product-card" style="padding: 15px;">
-                                <div style="font-weight: bold;">${name}</div>
-                                <div style="color: #666;">${count} vendidos</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                ` : '<p style="color: #666;">No hay ventas aún.</p>'}
-            `;
         }
 
         // Renderizar productos al cargar
