@@ -872,6 +872,11 @@
             document.getElementById('product-price').value = product.price;
             document.getElementById('product-image').value = product.img;
             
+            // Llenar el selector de categorías y seleccionar la categoría del producto
+            loadCategoriesForProductSelect().then(() => {
+                document.getElementById('product-category').value = product.categoryId || '';
+            });
+
             // Mostrar vista previa de la imagen actual
             const preview = document.getElementById('image-preview');
             preview.innerHTML = `<img src="${product.img}" style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px;">`;
@@ -882,13 +887,22 @@
             addBtn.textContent = '💾 ACTUALIZAR PRODUCTO';
             addBtn.onclick = () => updateProduct(product.id);
             
+            // Navegar a la sección de agregar producto para que el usuario vea el formulario
+            showSection('add-product');
+            
+            // Hacer scroll al formulario
+            setTimeout(() => {
+                document.getElementById('section-add-product').scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+            
             // Mostrar notificación
-            showToast('Modifica los datos y presiona "ACTUALIZAR PRODUCTO"', 'info');
+            showToast('✏️ Modifica los datos arriba y presiona "ACTUALIZAR PRODUCTO"', 'info', 5000);
         }
 
         async function updateProduct(productId) {
             const name = document.getElementById('product-name').value.trim();
             const price = document.getElementById('product-price').value.trim();
+            const categoryId = document.getElementById('product-category').value;
             const imageInput = document.getElementById('product-camera');
             const imageUrlInput = document.getElementById('product-image').value.trim();
 
@@ -917,6 +931,7 @@
                 await database.ref(`products/${productId}`).update({
                     name,
                     price,
+                    categoryId: categoryId || null,
                     img: imageUrl
                 });
                 showToast('¡Producto actualizado correctamente!', 'success');
@@ -927,13 +942,14 @@
             // Limpiar formulario y restaurar botón
             document.getElementById('product-name').value = '';
             document.getElementById('product-price').value = '';
+            document.getElementById('product-category').value = '';
             document.getElementById('product-image').value = '';
             document.getElementById('product-camera').value = '';
             document.getElementById('image-preview').style.display = 'none';
             
             // Restaurar botón de agregar
             const addBtn = document.querySelector('.btn-add');
-            addBtn.textContent = '➕ AGREGAR PRODUCTO';
+            addBtn.textContent = '💾 GUARDAR PRODUCTO EN LA TIENDA';
             addBtn.onclick = addProduct;
         }
 
@@ -1093,9 +1109,9 @@
             showToast('Modifica los datos y presiona "ACTUALIZAR CATEGORÍA"', 'info');
         }
 
-        // Función para cargar categorías en el selector de productos
+        // Función para cargar categorías en el selector de productos (retorna Promise)
         function loadCategoriesForProductSelect() {
-            database.ref('categories').once('value').then((snapshot) => {
+            return database.ref('categories').once('value').then((snapshot) => {
                 const select = document.getElementById('product-category');
                 select.innerHTML = '<option value="">Selecciona una categoría...</option>';
                 
