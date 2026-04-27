@@ -379,33 +379,16 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN SUPABASE ---
-        const SUPABASE_URL = 'https://upoggoaofzzxpjwvdoii.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_gS37Hx8qTy7jLR_S-YBd1A_-Frir6CZ';
-
         // Verificar autenticación
         if (localStorage.getItem('admin_logged_in') !== 'true') {
             window.location.href = 'login.html';
         }
 
-        // Cargar productos desde Supabase
-        let products = [];
+        let products = JSON.parse(localStorage.getItem('products')) || [];
 
-        async function loadProducts() {
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
-                    headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`
-                    }
-                });
-                products = await response.json();
-                renderProducts();
-            } catch (error) {
-                console.error('Error al cargar productos:', error);
-                products = [];
-                renderProducts();
-            }
+        function loadProducts() {
+            products = JSON.parse(localStorage.getItem('products')) || [];
+            renderProducts();
         }
 
         function renderProducts() {
@@ -420,7 +403,7 @@
             }
 
             grid.innerHTML = '';
-            products.forEach((product) => {
+            products.forEach((product, index) => {
                 grid.innerHTML += `
                     <div class="product-card">
                         <img src="${product.img}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/300x250?text=Sin+imagen'">
@@ -428,8 +411,8 @@
                             <div class="product-name">${product.name}</div>
                             <div class="product-price">$${product.price}</div>
                             <div class="product-actions">
-                                <button class="btn-edit" onclick="editProduct(${product.id})">✏️ EDITAR</button>
-                                <button class="btn-delete" onclick="deleteProduct(${product.id})">🗑️ ELIMINAR</button>
+                                <button class="btn-edit" onclick="editProduct(${index})">✏️ EDITAR</button>
+                                <button class="btn-delete" onclick="deleteProduct(${index})">🗑️ ELIMINAR</button>
                             </div>
                         </div>
                     </div>
