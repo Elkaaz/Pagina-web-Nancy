@@ -301,7 +301,7 @@
     <!-- SECCIÓN INVENTARIO -->
     <div id="section-inventory" style="display: none;">
         <div class="products-section">
-            <h2>📦 INVENTARIO</h2>
+            <h2>📦 INVENTARIO (<span id="product-count">0</span> productos)</h2>
             <div style="margin-bottom: 20px; display: flex; gap: 10px;">
                 <input type="text" id="search-product" placeholder="🔍 Buscar producto..." onkeyup="searchProducts()" style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem;">
                 <button class="btn-header" onclick="loadProducts()">🔄 ACTUALIZAR</button>
@@ -737,6 +737,7 @@
         function showSection(section) {
             document.getElementById('section-add-product').style.display = section === 'add-product' ? 'block' : 'none';
             document.getElementById('section-inventory').style.display = section === 'inventory' ? 'block' : 'none';
+            document.getElementById('section-design').style.display = section === 'design' ? 'block' : 'none';
             document.getElementById('section-settings').style.display = section === 'settings' ? 'block' : 'none';
             document.getElementById('section-orders').style.display = section === 'orders' ? 'block' : 'none';
             document.getElementById('section-returns').style.display = section === 'returns' ? 'block' : 'none';
